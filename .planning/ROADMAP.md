@@ -78,14 +78,16 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth)
 
-**Plans:** 5 plans
+**Plans:** 5 plans ✓
+
+**Status:** Complete (2026-01-24)
 
 Plans:
-- [ ] 02-01-PLAN.md — Enhance attendance API with full context response
-- [ ] 02-02-PLAN.md — Wire break policy enforcement to anomaly creation
-- [ ] 02-03-PLAN.md — Build attendance UI components (status card, modals)
-- [ ] 02-04-PLAN.md — Build timeline components and attendance page
-- [ ] 02-05-PLAN.md — Integrate attendance components into dashboard
+- [x] 02-01-PLAN.md — Enhance attendance API with full context response
+- [x] 02-02-PLAN.md — Wire break policy enforcement to anomaly creation
+- [x] 02-03-PLAN.md — Build attendance UI components (status card, modals)
+- [x] 02-04-PLAN.md — Build timeline components and attendance page
+- [x] 02-05-PLAN.md — Integrate attendance components into dashboard
 
 ---
 
@@ -114,7 +116,15 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth)
 
-**Estimated Plans:** 4-5
+**Plans:** 4 plans
+
+**Status:** Planned (2026-01-24)
+
+Plans:
+- [ ] 03-01-PLAN.md — Enhance timesheets API with attachments and validation
+- [ ] 03-02-PLAN.md — Admin project/task management API
+- [ ] 03-03-PLAN.md — Frontend timesheet components and hooks
+- [ ] 03-04-PLAN.md — Integrate timesheets page and admin projects page
 
 ---
 
