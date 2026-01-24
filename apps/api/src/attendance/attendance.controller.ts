@@ -14,7 +14,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
 import { AttendanceService } from './attendance.service';
@@ -22,6 +28,11 @@ import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { StartBreakDto } from './dto/start-break.dto';
 import { OverrideAttendanceDto } from './dto/override-attendance.dto';
+import {
+  AttendanceDayResponseDto,
+  CheckInResponseDto,
+  CheckOutResponseDto,
+} from './dto/attendance-day.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -56,11 +67,12 @@ export class AttendanceController {
    */
   @Post('check-out')
   @ApiOperation({ summary: 'Check out for the day' })
+  @ApiOkResponse({ type: CheckOutResponseDto, description: 'Check-out response with summary' })
   async checkOut(
     @CurrentUser() user: any,
     @Body() checkOutDto: CheckOutDto,
   ) {
-    const result = await this.attendanceService.checkOut(user.id, checkOutDto);
+    const result = await this.attendanceService.checkOut(user.id, user.companyId, checkOutDto);
     return { success: true, data: result };
   }
 
@@ -86,17 +98,18 @@ export class AttendanceController {
     @CurrentUser() user: any,
     @Param('breakId') breakId: string,
   ) {
-    const result = await this.attendanceService.endBreak(user.id, breakId);
+    const result = await this.attendanceService.endBreak(user.id, user.companyId, breakId);
     return { success: true, data: result };
   }
 
   /**
-   * Get today's attendance
+   * Get today's attendance with full context
    */
   @Get('today')
-  @ApiOperation({ summary: "Get today's attendance" })
+  @ApiOperation({ summary: "Get today's attendance with full context" })
+  @ApiOkResponse({ type: AttendanceDayResponseDto, description: 'Attendance day with policy' })
   async getToday(@CurrentUser() user: any) {
-    const result = await this.attendanceService.getToday(user.id);
+    const result = await this.attendanceService.getToday(user.id, user.companyId);
     return { success: true, data: result };
   }
 
@@ -179,5 +192,28 @@ export class AttendanceController {
       user.id,
     );
     return { success: true, data: result };
+  }
+
+  /**
+   * Get check-in locations for map visualization (Super Admin only)
+   */
+  @Get('locations')
+  @Roles(UserRole.SuperAdmin)
+  @ApiOperation({ summary: 'Get check-in locations for map' })
+  @ApiQuery({ name: 'startDate', required: true, description: 'Start date (ISO string)' })
+  @ApiQuery({ name: 'endDate', required: true, description: 'End date (ISO string)' })
+  async getCheckInLocations(
+    @CurrentUser() user: { companyId: string },
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    const locations = await this.attendanceService.getCheckInLocations(
+      user.companyId,
+      {
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      },
+    );
+    return { success: true, data: locations };
   }
 }

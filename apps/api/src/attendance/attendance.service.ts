@@ -794,6 +794,52 @@ export class AttendanceService {
   }
 
   /**
+   * Get check-in locations for map visualization (Super Admin only)
+   */
+  async getCheckInLocations(
+    companyId: string,
+    options: { startDate: Date; endDate: Date },
+  ) {
+    const events = await this.prisma.attendanceEvent.findMany({
+      where: {
+        type: AttendanceEventType.CheckIn,
+        timestamp: {
+          gte: options.startDate,
+          lte: options.endDate,
+        },
+        latitude: { not: null },
+        longitude: { not: null },
+        attendanceDay: {
+          user: { companyId },
+        },
+      },
+      include: {
+        attendanceDay: {
+          include: {
+            user: {
+              include: { profile: true },
+            },
+          },
+        },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    return events.map((event) => ({
+      id: event.id,
+      userId: event.attendanceDay.userId,
+      userName: event.attendanceDay.user.profile
+        ? `${event.attendanceDay.user.profile.firstName} ${event.attendanceDay.user.profile.lastName}`
+        : event.attendanceDay.user.email,
+      latitude: Number(event.latitude),
+      longitude: Number(event.longitude),
+      timestamp: event.timestamp.toISOString(),
+      workMode: event.workMode,
+      verificationStatus: event.verificationStatus,
+    }));
+  }
+
+  /**
    * Check if break time exceeds policy limits and create anomaly if so
    */
   private async checkBreakPolicyViolation(
