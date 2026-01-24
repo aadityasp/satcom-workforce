@@ -169,28 +169,29 @@ model User {
   updatedAt    DateTime  @updatedAt
 
   // Relations
-  company         Company          @relation(fields: [companyId], references: [id])
-  profile         EmployeeProfile?
-  devices         DeviceRecord[]
-  refreshTokens   RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
-  attendanceDays  AttendanceDay[]
-  timesheetEntries TimesheetEntry[]
-  leaveBalances   LeaveBalance[]
-  leaveRequests   LeaveRequest[]
-  approvedLeaves  LeaveRequest[]   @relation("LeaveApprover")
-  presenceSession PresenceSession?
-  heartbeats      HeartbeatEvent[]
-  chatMemberships ChatMember[]
-  sentMessages    ChatMessage[]
-  anomalyEvents   AnomalyEvent[]   @relation("AnomalySubject")
-  acknowledgedAnomalies AnomalyEvent[] @relation("AnomalyAcknowledger")
-  resolvedAnomalies AnomalyEvent[] @relation("AnomalyResolver")
-  auditLogs       AuditLog[]       @relation("AuditActor")
-  overriddenEvents AttendanceEvent[] @relation("AttendanceOverrider")
-  managedProjects Project[]        @relation("ProjectManager")
-  managedEmployees EmployeeProfile[] @relation("EmployeeManager")
-  activityLogs    ActivityLog[]
+  company               Company              @relation(fields: [companyId], references: [id])
+  profile               EmployeeProfile?
+  devices               DeviceRecord[]
+  refreshTokens         RefreshToken[]
+  passwordResetTokens   PasswordResetToken[]
+  attendanceDays        AttendanceDay[]
+  timesheetEntries      TimesheetEntry[]
+  leaveBalances         LeaveBalance[]
+  leaveRequests         LeaveRequest[]
+  approvedLeaves        LeaveRequest[]       @relation("LeaveApprover")
+  presenceSession       PresenceSession?
+  heartbeats            HeartbeatEvent[]
+  chatMemberships       ChatMember[]
+  sentMessages          ChatMessage[]
+  messageStatuses       MessageStatus[]      @relation("MessageRecipient")
+  anomalyEvents         AnomalyEvent[]       @relation("AnomalySubject")
+  acknowledgedAnomalies AnomalyEvent[]       @relation("AnomalyAcknowledger")
+  resolvedAnomalies     AnomalyEvent[]       @relation("AnomalyResolver")
+  auditLogs             AuditLog[]           @relation("AuditActor")
+  overriddenEvents      AttendanceEvent[]    @relation("AttendanceOverrider")
+  managedProjects       Project[]            @relation("ProjectManager")
+  managedEmployees      EmployeeProfile[]    @relation("EmployeeManager")
+  activityLogs          ActivityLog[]
 
   @@index([companyId])
   @@index([email])
@@ -292,12 +293,12 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  company         Company          @relation(fields: [companyId], references: [id])
-  manager         User?            @relation("ProjectManager", fields: [managerId], references: [id])
-  tasks           Task[]
+  company          Company          @relation(fields: [companyId], references: [id])
+  manager          User?            @relation("ProjectManager", fields: [managerId], references: [id])
+  tasks            Task[]
   timesheetEntries TimesheetEntry[]
-  chatThreads     ChatThread[]
-  activityLogs    ActivityLog[]
+  chatThreads      ChatThread[]
+  activityLogs     ActivityLog[]
 
   @@index([companyId])
   @@index([code])
@@ -316,9 +317,9 @@ model Task {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  project         Project          @relation(fields: [projectId], references: [id])
+  project          Project          @relation(fields: [projectId], references: [id])
   timesheetEntries TimesheetEntry[]
-  activityLogs    ActivityLog[]
+  activityLogs     ActivityLog[]
 
   @@unique([projectId, code])
   @@index([projectId])
@@ -354,20 +355,20 @@ model AttendanceDay {
 
 /// Check-in and check-out events
 model AttendanceEvent {
-  id                 String             @id @default(uuid())
+  id                 String              @id @default(uuid())
   attendanceDayId    String
   type               AttendanceEventType
   timestamp          DateTime
   workMode           WorkMode
-  latitude           Decimal?           @db.Decimal(10, 8)
-  longitude          Decimal?           @db.Decimal(11, 8)
-  verificationStatus VerificationStatus @default(None)
+  latitude           Decimal?            @db.Decimal(10, 8)
+  longitude          Decimal?            @db.Decimal(11, 8)
+  verificationStatus VerificationStatus  @default(None)
   deviceFingerprint  String?
   notes              String?
-  isOverride         Boolean            @default(false)
+  isOverride         Boolean             @default(false)
   overrideReason     String?
   overrideBy         String?
-  createdAt          DateTime           @default(now())
+  createdAt          DateTime            @default(now())
 
   // Relations
   attendanceDay AttendanceDay @relation(fields: [attendanceDayId], references: [id], onDelete: Cascade)
@@ -447,19 +448,19 @@ model TimesheetAttachment {
 
 /// Leave type definitions
 model LeaveTypeConfig {
-  id              String        @id @default(uuid())
-  companyId       String
-  name            String
-  code            LeaveTypeCode
-  description     String?
-  defaultDays     Int
-  carryForward    Boolean       @default(false)
-  maxCarryForward Int           @default(0)
-  requiresApproval Boolean      @default(true)
-  isPaid          Boolean       @default(true)
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id               String        @id @default(uuid())
+  companyId        String
+  name             String
+  code             LeaveTypeCode
+  description      String?
+  defaultDays      Int
+  carryForward     Boolean       @default(false)
+  maxCarryForward  Int           @default(0)
+  requiresApproval Boolean       @default(true)
+  isPaid           Boolean       @default(true)
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   // Relations
   company       Company        @relation(fields: [companyId], references: [id])
@@ -550,8 +551,8 @@ model PresenceSession {
   currentWorkMode  WorkMode?
   currentProjectId String?
   currentTaskId    String?
-  statusMessage    String?                           // ACTV-02: User's current status text
-  statusUpdatedAt  DateTime?                         // When status message was last set
+  statusMessage    String? // ACTV-02: User's current status text
+  statusUpdatedAt  DateTime? // When status message was last set
   lastLatitude     Decimal?       @db.Decimal(10, 8) // ACTV-06: GPS latitude
   lastLongitude    Decimal?       @db.Decimal(11, 8) // ACTV-06: GPS longitude
   createdAt        DateTime       @default(now())
@@ -653,15 +654,34 @@ model ChatMessage {
   durationSeconds Int?
   isEdited        Boolean         @default(false)
   editedAt        DateTime?
+  deletedAt       DateTime?
   createdAt       DateTime        @default(now())
 
   // Relations
-  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sender User       @relation(fields: [senderId], references: [id])
+  thread   ChatThread      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender   User            @relation(fields: [senderId], references: [id])
+  statuses MessageStatus[]
 
   @@index([threadId, createdAt])
   @@index([senderId])
   @@map("chat_messages")
+}
+
+/// Per-recipient message status for delivery/read tracking
+model MessageStatus {
+  id          String    @id @default(uuid())
+  messageId   String
+  userId      String // Recipient user
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation("MessageRecipient", fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_statuses")
 }
 
 // =============================================================================
@@ -690,13 +710,13 @@ model OfficeLocation {
 
 /// Geofence policy settings
 model GeofencePolicy {
-  id                     String   @id @default(uuid())
-  companyId              String   @unique
-  isEnabled              Boolean  @default(false)
-  requireGeofenceForOffice Boolean @default(false)
-  allowBypassWithReason  Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                       String   @id @default(uuid())
+  companyId                String   @unique
+  isEnabled                Boolean  @default(false)
+  requireGeofenceForOffice Boolean  @default(false)
+  allowBypassWithReason    Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   // Relations
   company Company @relation(fields: [companyId], references: [id])
@@ -724,8 +744,8 @@ model AnomalyRule {
   updatedAt   DateTime        @updatedAt
 
   // Relations
-  company  Company        @relation(fields: [companyId], references: [id])
-  events   AnomalyEvent[]
+  company Company        @relation(fields: [companyId], references: [id])
+  events  AnomalyEvent[]
 
   @@unique([companyId, type])
   @@index([companyId])
@@ -770,20 +790,20 @@ model AnomalyEvent {
 
 /// Work hours and rules policy
 model WorkPolicy {
-  id                       String   @id @default(uuid())
-  companyId                String   @unique
-  standardWorkHours        Int      @default(8)
-  maxWorkHours             Int      @default(12)
-  overtimeThresholdMinutes Int      @default(480)
-  maxOvertimeMinutes       Int      @default(240)
-  breakDurationMinutes     Int      @default(15)
-  lunchDurationMinutes     Int      @default(60)
-  graceMinutesLate         Int      @default(15)
-  graceMinutesEarly        Int      @default(15)
-  requireTimesheetNotes    Boolean  @default(false)
-  maxTimesheetMinutesPerDay Int     @default(1440)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  id                        String   @id @default(uuid())
+  companyId                 String   @unique
+  standardWorkHours         Int      @default(8)
+  maxWorkHours              Int      @default(12)
+  overtimeThresholdMinutes  Int      @default(480)
+  maxOvertimeMinutes        Int      @default(240)
+  breakDurationMinutes      Int      @default(15)
+  lunchDurationMinutes      Int      @default(60)
+  graceMinutesLate          Int      @default(15)
+  graceMinutesEarly         Int      @default(15)
+  requireTimesheetNotes     Boolean  @default(false)
+  maxTimesheetMinutesPerDay Int      @default(1440)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 
   // Relations
   company Company @relation(fields: [companyId], references: [id])
@@ -793,14 +813,14 @@ model WorkPolicy {
 
 /// Data retention policy settings
 model RetentionPolicy {
-  id                     String   @id @default(uuid())
-  companyId              String   @unique
-  chatRetentionDays      Int      @default(365)
-  attachmentRetentionDays Int     @default(365)
-  anomalyRetentionDays   Int      @default(730)
-  auditLogRetentionDays  Int      @default(2555)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  companyId               String   @unique
+  chatRetentionDays       Int      @default(365)
+  attachmentRetentionDays Int      @default(365)
+  anomalyRetentionDays    Int      @default(730)
+  auditLogRetentionDays   Int      @default(2555)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   // Relations
   company Company @relation(fields: [companyId], references: [id])
