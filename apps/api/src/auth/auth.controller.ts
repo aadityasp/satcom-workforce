@@ -20,7 +20,8 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { PasswordResetDto } from './dto/password-reset.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
@@ -54,7 +55,6 @@ export class AuthController {
    */
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify OTP for new device' })
   @ApiResponse({ status: 200, description: 'Device verified' })
@@ -126,16 +126,16 @@ export class AuthController {
   }
 
   /**
-   * Request password reset
+   * Request password reset (forgot password)
    */
   @Public()
-  @Post('password-reset')
+  @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 attempts per minute
   @ApiOperation({ summary: 'Request password reset email' })
   @ApiResponse({ status: 200, description: 'Reset email sent if account exists' })
-  async requestPasswordReset(@Body() passwordResetDto: PasswordResetDto) {
-    const result = await this.authService.requestPasswordReset(passwordResetDto.email);
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    const result = await this.authService.requestPasswordReset(dto.email);
     return {
       success: true,
       data: result,
@@ -146,17 +146,15 @@ export class AuthController {
    * Confirm password reset with token
    */
   @Public()
-  @Post('password-reset/confirm')
+  @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirm password reset with token' })
   @ApiResponse({ status: 200, description: 'Password reset successful' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  async confirmPasswordReset(
-    @Body() body: { token: string; newPassword: string },
-  ) {
+  async resetPassword(@Body() dto: ResetPasswordDto) {
     const result = await this.authService.confirmPasswordReset(
-      body.token,
-      body.newPassword,
+      dto.token,
+      dto.newPassword,
     );
     return {
       success: true,

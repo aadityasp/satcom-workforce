@@ -19,6 +19,7 @@ import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../common/email/email.service';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 
@@ -52,6 +53,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   /**
@@ -319,44 +321,121 @@ export class AuthService {
   }
 
   /**
-   * Request password reset
+   * Request password reset - send email with secure token
+   * Returns same response regardless of email existence (no enumeration)
    */
   async requestPasswordReset(email: string) {
+    // Always return same response to prevent email enumeration
+    const genericResponse = { message: 'If the email exists, a reset link has been sent' };
+
     const user = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
 
     if (!user) {
-      // Don't reveal if email exists
-      return { message: 'If the email exists, a reset link has been sent' };
+      // Add slight delay to match timing of successful case
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return genericResponse;
     }
 
-    // Generate reset token (in production, send via email)
-    const resetToken = uuidv4();
-    // Store token with expiry (would use Redis in production)
+    // Delete any existing tokens for this user
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
 
-    // Create audit log
+    // Generate reset token (random string, not JWT)
+    const resetToken = uuidv4() + '-' + uuidv4(); // Long random token
+    const tokenHash = await bcrypt.hash(resetToken, 10);
+
+    // Token expires in 1 hour
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1);
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    // Send email (async, don't wait for delivery)
+    this.emailService.sendPasswordResetEmail(user.email, resetToken).catch(err => {
+      this.logger.error(`Failed to send password reset email: ${err.message}`);
+    });
+
+    // Audit log
     await this.prisma.auditLog.create({
       data: {
         actorId: user.id,
-        action: 'PasswordReset',
+        action: 'PasswordResetRequested',
         entityType: 'User',
         entityId: user.id,
       },
     });
 
-    // TODO: Send email with reset link
-    console.log(`Password reset token for ${email}: ${resetToken}`);
-
-    return { message: 'If the email exists, a reset link has been sent' };
+    return genericResponse;
   }
 
   /**
    * Confirm password reset with token
+   * Validates token, updates password, invalidates all sessions
    */
   async confirmPasswordReset(token: string, newPassword: string) {
-    // TODO: Validate token and reset password
-    throw new BadRequestException('Password reset not implemented');
+    // Find all non-expired, unused tokens
+    const tokens = await this.prisma.passwordResetToken.findMany({
+      where: {
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+      include: { user: true },
+    });
+
+    // Find matching token (compare hash)
+    let matchingToken = null;
+    for (const t of tokens) {
+      const isMatch = await bcrypt.compare(token, t.tokenHash);
+      if (isMatch) {
+        matchingToken = t;
+        break;
+      }
+    }
+
+    if (!matchingToken) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await this.prisma.user.update({
+      where: { id: matchingToken.userId },
+      data: { passwordHash },
+    });
+
+    // Mark token as used
+    await this.prisma.passwordResetToken.update({
+      where: { id: matchingToken.id },
+      data: { usedAt: new Date() },
+    });
+
+    // Invalidate all refresh tokens for this user (force re-login)
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: matchingToken.userId },
+    });
+
+    // Audit log
+    await this.prisma.auditLog.create({
+      data: {
+        actorId: matchingToken.userId,
+        action: 'PasswordReset',
+        entityType: 'User',
+        entityId: matchingToken.userId,
+      },
+    });
+
+    return { message: 'Password reset successful. Please login with your new password.' };
   }
 
   /**
