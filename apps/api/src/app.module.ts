@@ -21,6 +21,8 @@ import { ChatModule } from './chat/chat.module';
 import { AnomaliesModule } from './anomalies/anomalies.module';
 import { AdminModule } from './admin/admin.module';
 import { StorageModule } from './storage/storage.module';
+import { ProjectsModule } from './projects/projects.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -69,6 +71,8 @@ import { StorageModule } from './storage/storage.module';
     AnomaliesModule,
     AdminModule,
     StorageModule,
+    ProjectsModule,
+    LocationsModule,
   ],
 })
 export class AppModule {}
