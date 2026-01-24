@@ -23,14 +23,14 @@ Progress: ██████░░░░ 61%
 | 3 | Timesheets & Projects | ✓ Complete | 4/4 |
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
 | 5 | Presence & Activity | ✓ Complete | 4/4 |
-| 6 | Chat | ◐ In Progress | 2/4 |
+| 6 | Chat | ◐ In Progress | 3/4 |
 | 7 | Reports & Dashboards | ○ Pending | 0/0 |
 | 8 | Mobile App | ○ Pending | 0/0 |
 | 9 | Admin & Documentation | ○ Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 06-03`
+**Run:** `/gsd:execute-plan 06-04`
 
 ## Accumulated Decisions
 
@@ -55,6 +55,9 @@ Progress: ██████░░░░ 61%
 | 06-02 | Auto-join all user threads on WebSocket connect | Instant message delivery without manual room join |
 | 06-02 | Read receipts notify individual senders, not thread room | Reduces noise, targeted delivery confirmation |
 | 06-02 | Delivery confirmations notify sender directly | Real-time delivery status to message sender |
+| 06-03 | Extract userId from JWT for currentUserId tracking | Track message ownership for optimistic updates |
+| 06-03 | 5-second auto-clear for typing indicators | Handle missed stop events gracefully |
+| 06-03 | Auto-mark delivered when receiving messages | Automatic delivery confirmation on receipt |
 
 ## Session History
 
@@ -79,6 +82,7 @@ Progress: ██████░░░░ 61%
 | 2026-01-24 | Phase 5 executed | All 4 plans complete, goal verified |
 | 2026-01-24 | Phase 6 plan 1 executed | MessageStatus model, edit/delete, user search API complete |
 | 2026-01-24 | Phase 6 plan 2 executed | ChatGateway with auto-join, send/deliver/read events complete |
+| 2026-01-24 | Phase 6 plan 3 executed | Chat store with Socket.IO, useChat hook with auto-connect |
 
 ## Configuration
 
