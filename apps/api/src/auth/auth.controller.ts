@@ -2,6 +2,7 @@
  * Authentication Controller
  *
  * Handles HTTP endpoints for authentication operations.
+ * Uses @Public() decorator for endpoints that don't require authentication.
  */
 
 import {
@@ -11,7 +12,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  Req,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -19,10 +20,10 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { PasswordResetDto } from './dto/password-reset.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { Public } from './decorators/public.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -32,6 +33,7 @@ export class AuthController {
   /**
    * Login with email and password
    */
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
@@ -69,15 +71,19 @@ export class AuthController {
   }
 
   /**
-   * Refresh access token
+   * Refresh access token using refresh token (with token rotation)
    */
+  @Public()
+  @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    const result = await this.authService.refreshToken(refreshTokenDto);
+  async refresh(@Headers('authorization') authHeader: string) {
+    const refreshToken = authHeader?.split(' ')[1];
+    const result = await this.authService.refreshToken(refreshToken);
     return {
       success: true,
       data: result,
@@ -89,12 +95,30 @@ export class AuthController {
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout and invalidate session' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@Body() body: { refreshToken?: string }) {
-    const result = await this.authService.logout(body.refreshToken);
+  async logout(
+    @CurrentUser('id') userId: string,
+    @Body() body: { refreshToken?: string },
+  ) {
+    const result = await this.authService.logout(userId, body.refreshToken);
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  /**
+   * Logout from all devices
+   */
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout from all devices' })
+  @ApiResponse({ status: 200, description: 'Logged out from all devices' })
+  async logoutAll(@CurrentUser('id') userId: string) {
+    const result = await this.authService.logoutAllDevices(userId);
     return {
       success: true,
       data: result,
@@ -104,6 +128,7 @@ export class AuthController {
   /**
    * Request password reset
    */
+  @Public()
   @Post('password-reset')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 attempts per minute
@@ -120,6 +145,7 @@ export class AuthController {
   /**
    * Confirm password reset with token
    */
+  @Public()
   @Post('password-reset/confirm')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirm password reset with token' })
