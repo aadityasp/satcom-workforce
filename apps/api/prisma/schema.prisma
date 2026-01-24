@@ -172,6 +172,8 @@ model User {
   company         Company          @relation(fields: [companyId], references: [id])
   profile         EmployeeProfile?
   devices         DeviceRecord[]
+  refreshTokens   RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   attendanceDays  AttendanceDay[]
   timesheetEntries TimesheetEntry[]
   leaveBalances   LeaveBalance[]
@@ -237,6 +239,39 @@ model DeviceRecord {
   @@unique([userId, fingerprint])
   @@index([userId])
   @@map("device_records")
+}
+
+/// Refresh tokens for session management
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+/// Password reset tokens
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // =============================================================================
