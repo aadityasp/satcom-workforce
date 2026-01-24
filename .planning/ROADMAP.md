@@ -192,7 +192,13 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth), Phase 3 (Timesheets for tasks)
 
-**Estimated Plans:** 4-5
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Extend schema and API for activity tracking with GPS
+- [ ] 05-02-PLAN.md — Enhance WebSocket gateway with activity events and stale cleanup
+- [ ] 05-03-PLAN.md — Frontend presence store, hook, and team page
+- [ ] 05-04-PLAN.md — Activity management UI and manager team view
 
 ---
 
