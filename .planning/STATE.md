@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: ██████░░░░ 58%
+Progress: ██████░░░░ 61%
 ```
 
 | Phase | Name | Status | Plans |
@@ -23,14 +23,14 @@ Progress: ██████░░░░ 58%
 | 3 | Timesheets & Projects | ✓ Complete | 4/4 |
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
 | 5 | Presence & Activity | ✓ Complete | 4/4 |
-| 6 | Chat | ◐ In Progress | 1/4 |
+| 6 | Chat | ◐ In Progress | 2/4 |
 | 7 | Reports & Dashboards | ○ Pending | 0/0 |
 | 8 | Mobile App | ○ Pending | 0/0 |
 | 9 | Admin & Documentation | ○ Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 06-02`
+**Run:** `/gsd:execute-plan 06-03`
 
 ## Accumulated Decisions
 
@@ -52,6 +52,9 @@ Progress: ██████░░░░ 58%
 | 06-01 | Soft delete nullifies content, preserves record | Enable "message deleted" UI display |
 | 06-01 | MessageStatus per recipient for read receipts | Granular delivery/read tracking |
 | 06-01 | Company validation on thread creation | Security: prevent cross-company messaging |
+| 06-02 | Auto-join all user threads on WebSocket connect | Instant message delivery without manual room join |
+| 06-02 | Read receipts notify individual senders, not thread room | Reduces noise, targeted delivery confirmation |
+| 06-02 | Delivery confirmations notify sender directly | Real-time delivery status to message sender |
 
 ## Session History
 
@@ -75,6 +78,7 @@ Progress: ██████░░░░ 58%
 | 2026-01-24 | Phase 5 plan 4 executed | Activity UI modal, status bar, task breakdown, team activity page |
 | 2026-01-24 | Phase 5 executed | All 4 plans complete, goal verified |
 | 2026-01-24 | Phase 6 plan 1 executed | MessageStatus model, edit/delete, user search API complete |
+| 2026-01-24 | Phase 6 plan 2 executed | ChatGateway with auto-join, send/deliver/read events complete |
 
 ## Configuration
 
