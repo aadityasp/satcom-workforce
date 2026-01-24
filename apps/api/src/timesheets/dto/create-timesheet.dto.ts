@@ -1,27 +1,35 @@
-import { IsString, IsNumber, IsOptional, IsDateString, IsUUID, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsUUID, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTimesheetDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'Date of the timesheet entry (YYYY-MM-DD)' })
   @IsDateString()
   date: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Project ID' })
   @IsUUID()
   projectId: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Task ID' })
   @IsUUID()
   taskId: string;
 
-  @ApiProperty()
-  @IsNumber()
-  @Min(15)
-  @Max(1440)
-  minutes: number;
+  @ApiProperty({ description: 'Start time (ISO datetime string, e.g., 2026-01-24T09:00:00)' })
+  @IsDateString()
+  startTime: string;
 
-  @ApiPropertyOptional()
+  @ApiProperty({ description: 'End time (ISO datetime string, e.g., 2026-01-24T17:00:00)' })
+  @IsDateString()
+  endTime: string;
+
+  @ApiPropertyOptional({ description: 'Notes about the work done' })
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'Array of MinIO object keys for file attachments' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  attachmentKeys?: string[];
 }
