@@ -36,3 +36,19 @@ export { useCheckInLocations } from './useCheckInLocations';
 export type { CheckInLocation } from './useCheckInLocations';
 
 export { usePresence } from './usePresence';
+
+export { useChat } from './useChat';
+export {
+  useChatStore,
+  useTypingUsers,
+  useConversationMessages,
+  useHasMoreMessages,
+  useTotalUnreadCount,
+  useActiveConversation,
+} from '@/store/chat';
+export type {
+  ChatMessage,
+  Conversation,
+  MessageStatus,
+  MessageRecipientStatus,
+} from '@/store/chat';
