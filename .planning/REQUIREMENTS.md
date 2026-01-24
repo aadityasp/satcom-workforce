@@ -16,37 +16,37 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AUTH-05**: All 4 roles have correct permissions (SuperAdmin, HR, Manager, Employee)
 - [x] **AUTH-06**: Protected routes redirect unauthenticated users to login
 
-### Attendance
+### Attendance ✓
 
-- [ ] **ATTN-01**: User can check in with work mode selection (Office, Remote, CustomerSite, FieldVisit, Travel)
-- [ ] **ATTN-02**: User can check out with automatic work duration calculation
-- [ ] **ATTN-03**: User can start/end breaks (Break, Lunch) with duration tracking
-- [ ] **ATTN-04**: System enforces break policy (max duration, overlap prevention)
-- [ ] **ATTN-05**: System calculates overtime based on configured threshold
-- [ ] **ATTN-06**: User sees today's attendance timeline (check-in, breaks, check-out)
-- [ ] **ATTN-07**: GPS coordinates captured at check-in (mobile only, foreground permission)
+- [x] **ATTN-01**: User can check in with work mode selection (Office, Remote, CustomerSite, FieldVisit, Travel)
+- [x] **ATTN-02**: User can check out with automatic work duration calculation
+- [x] **ATTN-03**: User can start/end breaks (Break, Lunch) with duration tracking
+- [x] **ATTN-04**: System enforces break policy (max duration, overlap prevention)
+- [x] **ATTN-05**: System calculates overtime based on configured threshold
+- [x] **ATTN-06**: User sees today's attendance timeline (check-in, breaks, check-out)
+- [x] **ATTN-07**: GPS coordinates captured at check-in (mobile only, foreground permission)
 
-### Location & Geofence
+### Location & Geofence ✓
 
-- [ ] **LOCN-01**: Super Admin can configure office locations with name, coordinates, and radius
-- [ ] **LOCN-02**: Super Admin can manage multiple geofence locations
-- [ ] **LOCN-03**: System verifies check-in location against geofence (Office work mode only)
-- [ ] **LOCN-04**: Check-in shows verification status (Verified/Unverified/Not Required)
-- [ ] **LOCN-05**: System creates anomaly alert when check-in fails geofence verification
-- [ ] **LOCN-06**: Super Admin can view check-in locations (other roles cannot)
-- [ ] **LOCN-07**: Super Admin can view map with all users' check-in locations
-- [ ] **LOCN-08**: Super Admin can view map with users' activity update locations
+- [x] **LOCN-01**: Super Admin can configure office locations with name, coordinates, and radius
+- [x] **LOCN-02**: Super Admin can manage multiple geofence locations
+- [x] **LOCN-03**: System verifies check-in location against geofence (Office work mode only)
+- [x] **LOCN-04**: Check-in shows verification status (Verified/Unverified/Not Required)
+- [x] **LOCN-05**: System creates anomaly alert when check-in fails geofence verification
+- [x] **LOCN-06**: Super Admin can view check-in locations (other roles cannot)
+- [x] **LOCN-07**: Super Admin can view map with all users' check-in locations
+- [x] **LOCN-08**: Super Admin can view map with users' activity update locations
 
-### Timesheets
+### Timesheets ✓
 
-- [ ] **TIME-01**: User can create timesheet entry with project and task selection
-- [ ] **TIME-02**: User can enter hours/minutes worked on each entry
-- [ ] **TIME-03**: User can add notes to timesheet entries
-- [ ] **TIME-04**: User can attach files/photos to timesheet entries (via MinIO)
-- [ ] **TIME-05**: System validates max 24 hours per day
-- [ ] **TIME-06**: System validates task belongs to selected project
-- [ ] **TIME-07**: User can edit/delete own timesheet entries (same day only)
-- [ ] **TIME-08**: User can view timesheet history with filters
+- [x] **TIME-01**: User can create timesheet entry with project and task selection
+- [x] **TIME-02**: User can enter hours/minutes worked on each entry
+- [x] **TIME-03**: User can add notes to timesheet entries
+- [x] **TIME-04**: User can attach files/photos to timesheet entries (via MinIO)
+- [x] **TIME-05**: System validates max 24 hours per day
+- [x] **TIME-06**: System validates task belongs to selected project
+- [x] **TIME-07**: User can edit/delete own timesheet entries (same day only)
+- [x] **TIME-08**: User can view timesheet history with filters
 
 ### Activity Tracking
 
@@ -155,35 +155,35 @@ Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | 1 | Pending |
-| AUTH-02 | 1 | Pending |
-| AUTH-03 | 1 | Pending |
-| AUTH-04 | 1 | Pending |
-| AUTH-05 | 1 | Pending |
-| AUTH-06 | 1 | Pending |
-| ATTN-01 | 2 | Pending |
-| ATTN-02 | 2 | Pending |
-| ATTN-03 | 2 | Pending |
-| ATTN-04 | 2 | Pending |
-| ATTN-05 | 2 | Pending |
-| ATTN-06 | 2 | Pending |
-| ATTN-07 | 2 | Pending |
-| TIME-01 | 3 | Pending |
-| TIME-02 | 3 | Pending |
-| TIME-03 | 3 | Pending |
-| TIME-04 | 3 | Pending |
-| TIME-05 | 3 | Pending |
-| TIME-06 | 3 | Pending |
-| TIME-07 | 3 | Pending |
-| TIME-08 | 3 | Pending |
-| LOCN-01 | 4 | Pending |
-| LOCN-02 | 4 | Pending |
-| LOCN-03 | 4 | Pending |
-| LOCN-04 | 4 | Pending |
-| LOCN-05 | 4 | Pending |
-| LOCN-06 | 4 | Pending |
-| LOCN-07 | 4 | Pending |
-| LOCN-08 | 4 | Pending |
+| AUTH-01 | 1 | Complete |
+| AUTH-02 | 1 | Complete |
+| AUTH-03 | 1 | Complete |
+| AUTH-04 | 1 | Complete |
+| AUTH-05 | 1 | Complete |
+| AUTH-06 | 1 | Complete |
+| ATTN-01 | 2 | Complete |
+| ATTN-02 | 2 | Complete |
+| ATTN-03 | 2 | Complete |
+| ATTN-04 | 2 | Complete |
+| ATTN-05 | 2 | Complete |
+| ATTN-06 | 2 | Complete |
+| ATTN-07 | 2 | Complete |
+| TIME-01 | 3 | Complete |
+| TIME-02 | 3 | Complete |
+| TIME-03 | 3 | Complete |
+| TIME-04 | 3 | Complete |
+| TIME-05 | 3 | Complete |
+| TIME-06 | 3 | Complete |
+| TIME-07 | 3 | Complete |
+| TIME-08 | 3 | Complete |
+| LOCN-01 | 4 | Complete |
+| LOCN-02 | 4 | Complete |
+| LOCN-03 | 4 | Complete |
+| LOCN-04 | 4 | Complete |
+| LOCN-05 | 4 | Complete |
+| LOCN-06 | 4 | Complete |
+| LOCN-07 | 4 | Complete |
+| LOCN-08 | 4 | Complete |
 | ACTV-01 | 5 | Pending |
 | ACTV-02 | 5 | Pending |
 | ACTV-03 | 5 | Pending |
@@ -223,7 +223,7 @@ Which phases cover which requirements.
 | ADMN-01 | 9 | Pending |
 | ADMN-02 | 9 | Pending |
 | ADMN-03 | 9 | Pending |
-| ADMN-04 | 3 | Pending |
+| ADMN-04 | 3 | Complete |
 | ADMN-05 | 9 | Pending |
 
 **Coverage:**

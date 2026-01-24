@@ -8,12 +8,12 @@
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Management sees real-time employee location, activity, and productivity — employees have a fast, friction-free app for daily work tasks.
-**Current focus:** Phase 4 - Location & Geofence (COMPLETE)
+**Current focus:** Phase 5 - Presence & Activity
 
 ## Current Status
 
 ```
-Progress: █████░░░░░ 50%
+Progress: █████░░░░░ 44%
 ```
 
 | Phase | Name | Status | Plans |
@@ -30,7 +30,7 @@ Progress: █████░░░░░ 50%
 
 ## Next Action
 
-**Run:** `/gsd:plan-phase` for Phase 5 - Presence & Activity
+**Run:** `/gsd:discuss-phase 5`
 
 ## Session History
 
@@ -47,6 +47,7 @@ Progress: █████░░░░░ 50%
 | 2026-01-24 | Phase 4 plan 2 executed | Geofence anomaly detection integrated |
 | 2026-01-24 | Phase 4 plan 3 executed | Admin Location UI complete |
 | 2026-01-24 | Phase 4 plan 4 executed | Super Admin map view complete |
+| 2026-01-24 | Phase 4 executed | All 4 plans complete, goal verified |
 
 ## Configuration
 
