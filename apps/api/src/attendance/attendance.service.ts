@@ -10,20 +10,28 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { AttendanceEventType, BreakType, VerificationStatus, WorkMode } from '@prisma/client';
+import { AttendanceEventType, BreakType, VerificationStatus, WorkMode, AnomalyType, AnomalyStatus } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { GeofenceService } from './geofence.service';
+import { AnomaliesService } from '../anomalies/anomalies.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { StartBreakDto } from './dto/start-break.dto';
 import { OverrideAttendanceDto } from './dto/override-attendance.dto';
+import {
+  AttendanceDayResponseDto,
+  WorkPolicyDto,
+  AttendanceEventDto,
+  BreakSegmentDto,
+} from './dto/attendance-day.dto';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private prisma: PrismaService,
     private geofenceService: GeofenceService,
+    private anomaliesService: AnomaliesService,
   ) {}
 
   /**
@@ -56,7 +64,8 @@ export class AttendanceService {
     // Validate geofence if required for office mode
     let verificationStatus: VerificationStatus = VerificationStatus.None;
     if (checkInDto.workMode === WorkMode.Office) {
-      verificationStatus = await this.geofenceService.validateLocation(
+      verificationStatus = await this.geofenceService.validateAndCreateAnomaly(
+        userId,
         companyId,
         checkInDto.latitude,
         checkInDto.longitude,
@@ -109,14 +118,14 @@ export class AttendanceService {
 
     return {
       event,
-      attendanceDay: await this.getAttendanceDay(attendanceDay.id),
+      attendanceDay: await this.getAttendanceDayWithPolicy(attendanceDay.id, companyId, userId),
     };
   }
 
   /**
    * Check out for the day
    */
-  async checkOut(userId: string, checkOutDto: CheckOutDto) {
+  async checkOut(userId: string, companyId: string, checkOutDto: CheckOutDto) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -152,7 +161,7 @@ export class AttendanceService {
     // End any open breaks
     const openBreaks = attendanceDay.breaks.filter((b) => !b.endTime);
     for (const openBreak of openBreaks) {
-      await this.endBreak(userId, openBreak.id);
+      await this.endBreak(userId, companyId, openBreak.id);
     }
 
     // Create check-out event
@@ -181,9 +190,19 @@ export class AttendanceService {
       },
     });
 
+    // Get updated attendance day for summary
+    const updatedDay = await this.prisma.attendanceDay.findUnique({
+      where: { id: attendanceDay.id },
+    });
+
     return {
       event,
-      attendanceDay: await this.getAttendanceDay(attendanceDay.id),
+      attendanceDay: await this.getAttendanceDayWithPolicy(attendanceDay.id, companyId, userId),
+      summary: {
+        workedMinutes: updatedDay?.totalWorkMinutes || 0,
+        breakMinutes: (updatedDay?.totalBreakMinutes || 0) + (updatedDay?.totalLunchMinutes || 0),
+        overtime: updatedDay?.overtimeMinutes || 0,
+      },
     };
   }
 
@@ -251,7 +270,7 @@ export class AttendanceService {
   /**
    * End a break
    */
-  async endBreak(userId: string, breakId: string) {
+  async endBreak(userId: string, companyId: string, breakId: string) {
     const breakSegment = await this.prisma.breakSegment.findUnique({
       where: { id: breakId },
       include: { attendanceDay: true },
@@ -285,6 +304,13 @@ export class AttendanceService {
     // Update day totals
     await this.recalculateBreakTotals(breakSegment.attendanceDayId);
 
+    // Check for break policy violation and create anomaly if needed
+    await this.checkBreakPolicyViolation(
+      breakSegment.attendanceDayId,
+      userId,
+      companyId,
+    );
+
     // Create audit log
     await this.prisma.auditLog.create({
       data: {
@@ -300,9 +326,9 @@ export class AttendanceService {
   }
 
   /**
-   * Get today's attendance for user
+   * Get today's attendance for user with full context
    */
-  async getToday(userId: string) {
+  async getToday(userId: string, companyId: string): Promise<AttendanceDayResponseDto> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -313,13 +339,9 @@ export class AttendanceService {
           date: today,
         },
       },
-      include: {
-        events: { orderBy: { timestamp: 'asc' } },
-        breaks: { orderBy: { startTime: 'asc' } },
-      },
     });
 
-    return attendanceDay;
+    return this.getAttendanceDayWithPolicy(attendanceDay?.id || null, companyId, userId);
   }
 
   /**
@@ -509,6 +531,162 @@ export class AttendanceService {
   }
 
   /**
+   * Get attendance day with full context including work policy
+   */
+  async getAttendanceDayWithPolicy(
+    attendanceDayId: string | null,
+    companyId: string,
+    userId: string,
+  ): Promise<AttendanceDayResponseDto> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Fetch work policy
+    const policy = await this.prisma.workPolicy.findUnique({
+      where: { companyId },
+    });
+
+    const defaultPolicy: WorkPolicyDto = {
+      breakDurationMinutes: policy?.breakDurationMinutes ?? 15,
+      lunchDurationMinutes: policy?.lunchDurationMinutes ?? 60,
+      overtimeThresholdMinutes: policy?.overtimeThresholdMinutes ?? 480,
+      maxOvertimeMinutes: policy?.maxOvertimeMinutes ?? 240,
+      standardWorkHours: policy?.standardWorkHours ?? 8,
+    };
+
+    // If no attendance day, return not_checked_in status
+    if (!attendanceDayId) {
+      return {
+        date: today.toISOString(),
+        status: 'not_checked_in',
+        totalWorkMinutes: 0,
+        totalBreakMinutes: 0,
+        totalLunchMinutes: 0,
+        overtimeMinutes: 0,
+        events: [],
+        breaks: [],
+        policy: defaultPolicy,
+      };
+    }
+
+    // Fetch attendance day with events and breaks
+    const day = await this.prisma.attendanceDay.findUnique({
+      where: { id: attendanceDayId },
+      include: {
+        events: { orderBy: { timestamp: 'asc' } },
+        breaks: { orderBy: { startTime: 'asc' } },
+      },
+    });
+
+    if (!day) {
+      return {
+        date: today.toISOString(),
+        status: 'not_checked_in',
+        totalWorkMinutes: 0,
+        totalBreakMinutes: 0,
+        totalLunchMinutes: 0,
+        overtimeMinutes: 0,
+        events: [],
+        breaks: [],
+        policy: defaultPolicy,
+      };
+    }
+
+    // Compute status
+    const checkInEvent = day.events.find(
+      (e) => e.type === AttendanceEventType.CheckIn,
+    );
+    const checkOutEvent = day.events.find(
+      (e) => e.type === AttendanceEventType.CheckOut,
+    );
+    const openBreak = day.breaks.find((b) => !b.endTime);
+
+    let status: 'not_checked_in' | 'working' | 'on_break' | 'checked_out';
+    if (!checkInEvent) {
+      status = 'not_checked_in';
+    } else if (checkOutEvent) {
+      status = 'checked_out';
+    } else if (openBreak) {
+      status = 'on_break';
+    } else {
+      status = 'working';
+    }
+
+    // Map events to DTOs
+    const events: AttendanceEventDto[] = day.events.map((e) => ({
+      id: e.id,
+      type: e.type,
+      timestamp: e.timestamp.toISOString(),
+      workMode: e.workMode,
+      latitude: e.latitude ? Number(e.latitude) : undefined,
+      longitude: e.longitude ? Number(e.longitude) : undefined,
+      verificationStatus: e.verificationStatus,
+      notes: e.notes || undefined,
+      isOverride: e.isOverride,
+    }));
+
+    // Map breaks to DTOs
+    const breaks: BreakSegmentDto[] = day.breaks.map((b) => ({
+      id: b.id,
+      type: b.type,
+      startTime: b.startTime.toISOString(),
+      endTime: b.endTime?.toISOString(),
+      durationMinutes: b.durationMinutes || undefined,
+    }));
+
+    // Calculate live totals for work minutes if still working
+    let totalWorkMinutes = day.totalWorkMinutes;
+    if (status === 'working' && checkInEvent) {
+      const now = new Date();
+      const elapsedMinutes = Math.round(
+        (now.getTime() - checkInEvent.timestamp.getTime()) / 60000,
+      );
+      const breakMinutes = day.totalBreakMinutes + day.totalLunchMinutes;
+      totalWorkMinutes = Math.max(0, elapsedMinutes - breakMinutes);
+    } else if (status === 'on_break' && checkInEvent && openBreak) {
+      // Calculate work up to break start
+      const breakStartTime = openBreak.startTime.getTime();
+      const checkInTime = checkInEvent.timestamp.getTime();
+      const elapsedMinutes = Math.round((breakStartTime - checkInTime) / 60000);
+      const completedBreakMinutes = day.totalBreakMinutes + day.totalLunchMinutes;
+      totalWorkMinutes = Math.max(0, elapsedMinutes - completedBreakMinutes);
+    }
+
+    // Calculate live break minutes if on break
+    let totalBreakMinutes = day.totalBreakMinutes + day.totalLunchMinutes;
+    if (openBreak) {
+      const now = new Date();
+      const currentBreakMinutes = Math.round(
+        (now.getTime() - openBreak.startTime.getTime()) / 60000,
+      );
+      totalBreakMinutes += currentBreakMinutes;
+    }
+
+    return {
+      id: day.id,
+      date: day.date.toISOString(),
+      status,
+      checkInTime: checkInEvent?.timestamp.toISOString(),
+      checkOutTime: checkOutEvent?.timestamp.toISOString(),
+      workMode: checkInEvent?.workMode,
+      currentBreak: openBreak
+        ? {
+            id: openBreak.id,
+            type: openBreak.type,
+            startTime: openBreak.startTime.toISOString(),
+          }
+        : undefined,
+      totalWorkMinutes,
+      totalBreakMinutes: day.totalBreakMinutes,
+      totalLunchMinutes: day.totalLunchMinutes,
+      overtimeMinutes: day.overtimeMinutes,
+      events,
+      breaks,
+      policy: defaultPolicy,
+    };
+  }
+
+  /**
    * Calculate day totals after check-out
    */
   private async calculateDayTotals(attendanceDayId: string) {
@@ -613,5 +791,85 @@ export class AttendanceService {
     const minutes = avgMinutes % 60;
 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+  }
+
+  /**
+   * Check if break time exceeds policy limits and create anomaly if so
+   */
+  private async checkBreakPolicyViolation(
+    attendanceDayId: string,
+    userId: string,
+    companyId: string,
+  ): Promise<void> {
+    // Get the attendance day with all breaks
+    const day = await this.prisma.attendanceDay.findUnique({
+      where: { id: attendanceDayId },
+      include: { breaks: true },
+    });
+
+    if (!day) return;
+
+    // Calculate total break minutes (only completed breaks)
+    const totalBreakMinutes = day.breaks
+      .filter((b) => b.endTime != null)
+      .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+
+    // Get work policy
+    const policy = await this.prisma.workPolicy.findUnique({
+      where: { companyId },
+    });
+
+    if (!policy) return;
+
+    // Check if exceeds limit (breakDurationMinutes + lunchDurationMinutes)
+    const maxBreakMinutes = policy.breakDurationMinutes + policy.lunchDurationMinutes;
+
+    if (totalBreakMinutes > maxBreakMinutes) {
+      // Check if anomaly already exists for this day
+      const startOfDay = new Date(day.date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+      const existingAnomaly = await this.prisma.anomalyEvent.findFirst({
+        where: {
+          userId,
+          type: AnomalyType.ExcessiveBreak,
+          detectedAt: {
+            gte: startOfDay,
+            lt: endOfDay,
+          },
+        },
+      });
+
+      if (!existingAnomaly) {
+        // Find anomaly rule for ExcessiveBreak
+        const rule = await this.prisma.anomalyRule.findFirst({
+          where: {
+            companyId,
+            type: AnomalyType.ExcessiveBreak,
+            isEnabled: true,
+          },
+        });
+
+        if (rule) {
+          await this.prisma.anomalyEvent.create({
+            data: {
+              userId,
+              ruleId: rule.id,
+              type: AnomalyType.ExcessiveBreak,
+              severity: rule.severity,
+              status: AnomalyStatus.Open,
+              title: 'Excessive Break Time',
+              description: `Break time exceeded policy limit: ${totalBreakMinutes} minutes (limit: ${maxBreakMinutes} minutes)`,
+              data: {
+                totalBreakMinutes,
+                policyLimitMinutes: maxBreakMinutes,
+                date: day.date.toISOString(),
+              },
+            },
+          });
+        }
+      }
+    }
   }
 }

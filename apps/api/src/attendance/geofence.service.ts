@@ -7,7 +7,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { VerificationStatus } from '@prisma/client';
+import { VerificationStatus, AnomalyType, AnomalyStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -109,5 +109,59 @@ export class GeofenceService {
     return this.prisma.geofencePolicy.findUnique({
       where: { companyId },
     });
+  }
+
+  /**
+   * Validate location and create anomaly if geofence fails
+   * This is the enhanced version that also creates anomaly events
+   */
+  async validateAndCreateAnomaly(
+    userId: string,
+    companyId: string,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<VerificationStatus> {
+    // First, perform the validation
+    const verificationStatus = await this.validateLocation(
+      companyId,
+      latitude,
+      longitude,
+    );
+
+    // If geofence failed, create an anomaly event
+    if (verificationStatus === VerificationStatus.GeofenceFailed) {
+      // Find the GeofenceFailure anomaly rule
+      const rule = await this.prisma.anomalyRule.findFirst({
+        where: {
+          companyId,
+          type: AnomalyType.GeofenceFailure,
+          isEnabled: true,
+        },
+      });
+
+      if (rule) {
+        // Create anomaly event
+        await this.prisma.anomalyEvent.create({
+          data: {
+            userId,
+            ruleId: rule.id,
+            type: AnomalyType.GeofenceFailure,
+            severity: rule.severity,
+            status: AnomalyStatus.Open,
+            title: 'Check-in Outside Geofence',
+            description:
+              'User attempted Office check-in from location outside configured office radius',
+            data: {
+              latitude,
+              longitude,
+              timestamp: new Date().toISOString(),
+              verificationStatus,
+            },
+          },
+        });
+      }
+    }
+
+    return verificationStatus;
   }
 }
