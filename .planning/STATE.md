@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-24 (05-02 complete)
+**Updated:** 2026-01-24 (05-03 complete)
 
 ## Project Reference
 
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: █████░░░░░ 50%
+Progress: █████░░░░░ 53%
 ```
 
 | Phase | Name | Status | Plans |
@@ -22,7 +22,7 @@ Progress: █████░░░░░ 50%
 | 2 | Attendance Core | ✓ Complete | 5/5 |
 | 3 | Timesheets & Projects | ✓ Complete | 4/4 |
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
-| 5 | Presence & Activity | ◐ In Progress | 2/? |
+| 5 | Presence & Activity | ◐ In Progress | 3/? |
 | 6 | Chat | ○ Pending | 0/0 |
 | 7 | Reports & Dashboards | ○ Pending | 0/0 |
 | 8 | Mobile App | ○ Pending | 0/0 |
@@ -30,7 +30,7 @@ Progress: █████░░░░░ 50%
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 05-03` (if exists) or continue Phase 5
+**Run:** `/gsd:execute-plan 05-04` (if exists) or continue Phase 5
 
 ## Accumulated Decisions
 
@@ -43,6 +43,9 @@ Progress: █████░░░░░ 50%
 | 05-02 | Multi-device tracking via Map<userId, Set<socketId>> | User only offline when all devices disconnect |
 | 05-02 | Company-scoped WebSocket rooms | Events only broadcast to same company |
 | 05-02 | 15-min stale threshold, 5-min cron interval | Timely cleanup without excessive polling |
+| 05-03 | Socket.IO connection managed at store level | Auto-reconnect with 5 attempts |
+| 05-03 | Heartbeat interval 30 seconds with optional GPS | Balance between freshness and battery/network usage |
+| 05-03 | Filter state in Zustand | Persistence across navigation |
 
 ## Session History
 
@@ -62,11 +65,12 @@ Progress: █████░░░░░ 50%
 | 2026-01-24 | Phase 4 executed | All 4 plans complete, goal verified |
 | 2026-01-24 | Phase 5 plan 1 executed | Presence schema & activity API complete |
 | 2026-01-24 | Phase 5 plan 2 executed | WebSocket gateway enhanced with GPS, activity events, cron cleanup |
+| 2026-01-24 | Phase 5 plan 3 executed | Frontend presence store, hook, components, team page |
 
 ## Session Continuity
 
-Last session: 2026-01-24T22:05:00Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-01-24T22:01:01Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
 
 ## Configuration
