@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-24 (Phase 5 complete)
+**Updated:** 2026-01-24 (Phase 6 in progress)
 
 ## Project Reference
 
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: ██████░░░░ 56%
+Progress: ██████░░░░ 58%
 ```
 
 | Phase | Name | Status | Plans |
@@ -23,14 +23,14 @@ Progress: ██████░░░░ 56%
 | 3 | Timesheets & Projects | ✓ Complete | 4/4 |
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
 | 5 | Presence & Activity | ✓ Complete | 4/4 |
-| 6 | Chat | ○ Pending | 0/0 |
+| 6 | Chat | ◐ In Progress | 1/4 |
 | 7 | Reports & Dashboards | ○ Pending | 0/0 |
 | 8 | Mobile App | ○ Pending | 0/0 |
 | 9 | Admin & Documentation | ○ Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:discuss-phase 6`
+**Run:** `/gsd:execute-plan 06-02`
 
 ## Accumulated Decisions
 
@@ -48,6 +48,10 @@ Progress: ██████░░░░ 56%
 | 05-03 | Filter state in Zustand | Persistence across navigation |
 | 05-04 | Activity UI in tabbed modal | Single entry point for activity and status updates |
 | 05-04 | Team Activity as separate admin page | Better UX for date navigation and detailed view |
+| 06-01 | 15-minute edit window for messages | Balance between flexibility and message integrity |
+| 06-01 | Soft delete nullifies content, preserves record | Enable "message deleted" UI display |
+| 06-01 | MessageStatus per recipient for read receipts | Granular delivery/read tracking |
+| 06-01 | Company validation on thread creation | Security: prevent cross-company messaging |
 
 ## Session History
 
@@ -70,6 +74,7 @@ Progress: ██████░░░░ 56%
 | 2026-01-24 | Phase 5 plan 3 executed | Frontend presence store, hook, components, team page |
 | 2026-01-24 | Phase 5 plan 4 executed | Activity UI modal, status bar, task breakdown, team activity page |
 | 2026-01-24 | Phase 5 executed | All 4 plans complete, goal verified |
+| 2026-01-24 | Phase 6 plan 1 executed | MessageStatus model, edit/delete, user search API complete |
 
 ## Configuration
 
