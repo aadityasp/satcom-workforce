@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
+import { ActivityStatusBar, TaskBreakdownCard } from '@/components/presence';
 
 interface AttendanceStatus {
   isCheckedIn: boolean;
@@ -507,6 +508,13 @@ export default function DashboardPage() {
                     <p className="font-medium text-navy-900">Anomalies</p>
                     <p className="text-sm text-warning">{adminSummary.openAnomalies} to review</p>
                   </button>
+                  <button onClick={() => router.push('/admin/team-activity')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
+                    <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-teal-200 transition-colors">
+                      <Users size={20} className="text-teal-600" />
+                    </div>
+                    <p className="font-medium text-navy-900">Team Activity</p>
+                    <p className="text-sm text-silver-500">View activities</p>
+                  </button>
                   {user.role === 'SuperAdmin' && (
                     <button onClick={() => router.push('/admin/settings')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
@@ -804,7 +812,14 @@ export default function DashboardPage() {
               </motion.div>
 
               {/* Quick Actions */}
-              <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <button onClick={() => router.push('/attendance')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-teal-200 transition-colors">
+                    <Clock size={20} className="text-teal-600" />
+                  </div>
+                  <p className="font-medium text-navy-900">Attendance</p>
+                  <p className="text-sm text-silver-500">View timeline</p>
+                </button>
                 <button onClick={() => router.push('/timesheets')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
                     <FileText size={20} className="text-blue-600" />
@@ -834,6 +849,33 @@ export default function DashboardPage() {
                   <p className="text-sm text-silver-500">Chat with team</p>
                 </button>
               </motion.div>
+
+              {/* Activity Section */}
+              <motion.div variants={itemVariants} className="grid lg:grid-cols-2 gap-6">
+                <ActivityStatusBar />
+                <TaskBreakdownCard period="today" />
+              </motion.div>
+
+              {/* Manager Team Activity Link */}
+              {user.role === 'Manager' && (
+                <motion.div variants={itemVariants}>
+                  <button
+                    onClick={() => router.push('/admin/team-activity')}
+                    className="w-full bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                        <Users size={20} className="text-teal-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-navy-900">View Team Activity</p>
+                        <p className="text-sm text-silver-500">See what your team is working on</p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-silver-400" />
+                  </button>
+                </motion.div>
+              )}
             </>
           )}
         </motion.div>
