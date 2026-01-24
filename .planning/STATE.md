@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-24 (05-01 complete)
+**Updated:** 2026-01-24 (05-02 complete)
 
 ## Project Reference
 
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: █████░░░░░ 47%
+Progress: █████░░░░░ 50%
 ```
 
 | Phase | Name | Status | Plans |
@@ -22,7 +22,7 @@ Progress: █████░░░░░ 47%
 | 2 | Attendance Core | ✓ Complete | 5/5 |
 | 3 | Timesheets & Projects | ✓ Complete | 4/4 |
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
-| 5 | Presence & Activity | ◐ In Progress | 1/? |
+| 5 | Presence & Activity | ◐ In Progress | 2/? |
 | 6 | Chat | ○ Pending | 0/0 |
 | 7 | Reports & Dashboards | ○ Pending | 0/0 |
 | 8 | Mobile App | ○ Pending | 0/0 |
@@ -30,7 +30,7 @@ Progress: █████░░░░░ 47%
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 05-02` (if exists) or continue Phase 5
+**Run:** `/gsd:execute-plan 05-03` (if exists) or continue Phase 5
 
 ## Accumulated Decisions
 
@@ -40,6 +40,9 @@ Progress: █████░░░░░ 47%
 | 05-01 | ActivityLog with explicit startedAt/endedAt | Accurate time tracking per project/task |
 | 05-01 | Manager sees direct reports only; HR/SuperAdmin see all | Role-based team view hierarchy |
 | 05-01 | Status message max 200 chars | Prevent abuse |
+| 05-02 | Multi-device tracking via Map<userId, Set<socketId>> | User only offline when all devices disconnect |
+| 05-02 | Company-scoped WebSocket rooms | Events only broadcast to same company |
+| 05-02 | 15-min stale threshold, 5-min cron interval | Timely cleanup without excessive polling |
 
 ## Session History
 
@@ -58,11 +61,12 @@ Progress: █████░░░░░ 47%
 | 2026-01-24 | Phase 4 plan 4 executed | Super Admin map view complete |
 | 2026-01-24 | Phase 4 executed | All 4 plans complete, goal verified |
 | 2026-01-24 | Phase 5 plan 1 executed | Presence schema & activity API complete |
+| 2026-01-24 | Phase 5 plan 2 executed | WebSocket gateway enhanced with GPS, activity events, cron cleanup |
 
 ## Session Continuity
 
-Last session: 2026-01-24T21:52:56Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-01-24T22:05:00Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
 
 ## Configuration
