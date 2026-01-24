@@ -1,12 +1,27 @@
 /**
  * Chat Controller
  */
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ChatMessageType } from '@prisma/client';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import {
+  CreateMessageDto,
+  EditMessageDto,
+  CreateDirectThreadDto,
+  CreateGroupThreadDto,
+} from './dto';
 
 @ApiTags('Chat')
 @ApiBearerAuth()
@@ -24,26 +39,27 @@ export class ChatController {
 
   @Post('threads/direct')
   @ApiOperation({ summary: 'Create direct message thread' })
-  async createDirect(@CurrentUser() user: any, @Body() body: { userId: string }) {
+  async createDirect(@CurrentUser() user: any, @Body() body: CreateDirectThreadDto) {
     const data = await this.chatService.createDirectThread(user.id, body.userId);
     return { success: true, data };
   }
 
   @Post('threads/group')
   @ApiOperation({ summary: 'Create group thread' })
-  async createGroup(@CurrentUser() user: any, @Body() body: { name: string; memberIds: string[]; projectId?: string }) {
+  async createGroup(@CurrentUser() user: any, @Body() body: CreateGroupThreadDto) {
     const data = await this.chatService.createGroupThread(user.id, body);
     return { success: true, data };
   }
 
   @Get('threads/:threadId/messages')
-  @ApiOperation({ summary: 'Get messages' })
+  @ApiOperation({ summary: 'Get messages with pagination' })
   async getMessages(
+    @CurrentUser() user: any,
     @Param('threadId') threadId: string,
-    @Query('before') before?: string,
+    @Query('cursor') cursor?: string,
     @Query('limit') limit?: number,
   ) {
-    const data = await this.chatService.getMessages(threadId, { before, limit });
+    const data = await this.chatService.getMessages(threadId, user.id, { cursor, limit });
     return { success: true, data };
   }
 
@@ -52,7 +68,7 @@ export class ChatController {
   async sendMessage(
     @CurrentUser() user: any,
     @Param('threadId') threadId: string,
-    @Body() body: { type: ChatMessageType; content?: string },
+    @Body() body: CreateMessageDto,
   ) {
     const data = await this.chatService.sendMessage(user.id, threadId, body);
     return { success: true, data };
@@ -61,7 +77,39 @@ export class ChatController {
   @Post('threads/:threadId/read')
   @ApiOperation({ summary: 'Mark thread as read' })
   async markRead(@CurrentUser() user: any, @Param('threadId') threadId: string) {
-    await this.chatService.markRead(user.id, threadId);
-    return { success: true };
+    const readMessageIds = await this.chatService.markRead(user.id, threadId);
+    return { success: true, data: { readMessageIds } };
+  }
+
+  @Patch('messages/:messageId')
+  @ApiOperation({ summary: 'Edit message (within 15 minutes)' })
+  async editMessage(
+    @CurrentUser() user: any,
+    @Param('messageId') messageId: string,
+    @Body() body: EditMessageDto,
+  ) {
+    const data = await this.chatService.editMessage(user.id, messageId, body.content);
+    return { success: true, data };
+  }
+
+  @Delete('messages/:messageId')
+  @ApiOperation({ summary: 'Delete message (soft delete)' })
+  async deleteMessage(
+    @CurrentUser() user: any,
+    @Param('messageId') messageId: string,
+  ) {
+    const data = await this.chatService.deleteMessage(user.id, messageId);
+    return { success: true, data };
+  }
+
+  @Get('users/search')
+  @ApiOperation({ summary: 'Search users for chat (same company only)' })
+  async searchUsers(
+    @CurrentUser() user: any,
+    @Query('q') query: string,
+    @Query('limit') limit?: number,
+  ) {
+    const data = await this.chatService.searchUsers(user.id, query || '', limit);
+    return { success: true, data };
   }
 }
