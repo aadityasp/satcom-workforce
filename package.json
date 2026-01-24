@@ -1,0 +1,28 @@
+{
+  "name": "satcom-employeetracker",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@satcom/api",
+    "dev:web": "npm run dev --workspace=@satcom/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run prisma:generate --workspace=@satcom/api",
+    "db:migrate": "npm run prisma:migrate --workspace=@satcom/api",
+    "db:seed": "npm run prisma:seed --workspace=@satcom/api",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "prettier": "^3.2.4",
+    "eslint": "^8.56.0"
+  }
+}

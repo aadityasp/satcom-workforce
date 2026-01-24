@@ -1,0 +1,183 @@
+/**
+ * Attendance Controller
+ *
+ * Handles HTTP endpoints for attendance operations.
+ */
+
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
+
+import { AttendanceService } from './attendance.service';
+import { CheckInDto } from './dto/check-in.dto';
+import { CheckOutDto } from './dto/check-out.dto';
+import { StartBreakDto } from './dto/start-break.dto';
+import { OverrideAttendanceDto } from './dto/override-attendance.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
+@ApiTags('Attendance')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('attendance')
+export class AttendanceController {
+  constructor(private readonly attendanceService: AttendanceService) {}
+
+  /**
+   * Check in for the day
+   */
+  @Post('check-in')
+  @ApiOperation({ summary: 'Check in for the day' })
+  async checkIn(
+    @CurrentUser() user: any,
+    @Body() checkInDto: CheckInDto,
+  ) {
+    const result = await this.attendanceService.checkIn(
+      user.id,
+      user.companyId,
+      checkInDto,
+    );
+    return { success: true, data: result };
+  }
+
+  /**
+   * Check out for the day
+   */
+  @Post('check-out')
+  @ApiOperation({ summary: 'Check out for the day' })
+  async checkOut(
+    @CurrentUser() user: any,
+    @Body() checkOutDto: CheckOutDto,
+  ) {
+    const result = await this.attendanceService.checkOut(user.id, checkOutDto);
+    return { success: true, data: result };
+  }
+
+  /**
+   * Start a break
+   */
+  @Post('break/start')
+  @ApiOperation({ summary: 'Start a break' })
+  async startBreak(
+    @CurrentUser() user: any,
+    @Body() startBreakDto: StartBreakDto,
+  ) {
+    const result = await this.attendanceService.startBreak(user.id, startBreakDto);
+    return { success: true, data: result };
+  }
+
+  /**
+   * End a break
+   */
+  @Post('break/:breakId/end')
+  @ApiOperation({ summary: 'End a break' })
+  async endBreak(
+    @CurrentUser() user: any,
+    @Param('breakId') breakId: string,
+  ) {
+    const result = await this.attendanceService.endBreak(user.id, breakId);
+    return { success: true, data: result };
+  }
+
+  /**
+   * Get today's attendance
+   */
+  @Get('today')
+  @ApiOperation({ summary: "Get today's attendance" })
+  async getToday(@CurrentUser() user: any) {
+    const result = await this.attendanceService.getToday(user.id);
+    return { success: true, data: result };
+  }
+
+  /**
+   * Get attendance history
+   */
+  @Get()
+  @ApiOperation({ summary: 'Get attendance history' })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'startDate', required: true })
+  @ApiQuery({ name: 'endDate', required: true })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getHistory(
+    @CurrentUser() user: any,
+    @Query('userId') userId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    // Non-HR/Admin can only view own attendance
+    const targetUserId =
+      user.role === UserRole.HR || user.role === UserRole.SuperAdmin
+        ? userId || user.id
+        : user.id;
+
+    const result = await this.attendanceService.getHistory(targetUserId, {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      page,
+      limit,
+    });
+
+    return { success: true, ...result };
+  }
+
+  /**
+   * Get attendance summary
+   */
+  @Get('summary')
+  @ApiOperation({ summary: 'Get attendance summary' })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'startDate', required: true })
+  @ApiQuery({ name: 'endDate', required: true })
+  async getSummary(
+    @CurrentUser() user: any,
+    @Query('userId') userId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    const targetUserId =
+      user.role === UserRole.HR || user.role === UserRole.SuperAdmin
+        ? userId || user.id
+        : user.id;
+
+    const result = await this.attendanceService.getSummary(
+      targetUserId,
+      new Date(startDate),
+      new Date(endDate),
+    );
+
+    return { success: true, data: result };
+  }
+
+  /**
+   * Override attendance event (HR/Admin)
+   */
+  @Patch(':eventId/override')
+  @Roles(UserRole.HR, UserRole.SuperAdmin)
+  @ApiOperation({ summary: 'Override attendance event' })
+  async override(
+    @Param('eventId') eventId: string,
+    @Body() overrideDto: OverrideAttendanceDto,
+    @CurrentUser() user: any,
+  ) {
+    const result = await this.attendanceService.overrideAttendance(
+      eventId,
+      overrideDto,
+      user.id,
+    );
+    return { success: true, data: result };
+  }
+}

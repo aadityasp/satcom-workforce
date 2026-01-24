@@ -1,0 +1,777 @@
+// Satcom Workforce Visibility System - Prisma Schema
+// This schema defines the complete data model for the workforce management MVP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  Employee
+  Manager
+  HR
+  SuperAdmin
+}
+
+enum EmployeeStatus {
+  Active
+  Inactive
+  OnLeave
+  Terminated
+}
+
+enum WorkMode {
+  Office
+  Remote
+  CustomerSite
+  FieldVisit
+  Travel
+}
+
+enum AttendanceEventType {
+  CheckIn
+  CheckOut
+}
+
+enum BreakType {
+  Break
+  Lunch
+}
+
+enum VerificationStatus {
+  None
+  GeofencePassed
+  GeofenceFailed
+  QRPassed
+  QRFailed
+  DeviceVerified
+}
+
+enum LeaveRequestStatus {
+  Pending
+  Approved
+  Rejected
+  Cancelled
+}
+
+enum LeaveTypeCode {
+  Sick
+  Casual
+  Earned
+  WFH
+  CompOff
+  LOP
+  FloatingHoliday
+  Bereavement
+  Maternity
+  Paternity
+  Custom
+}
+
+enum PresenceStatus {
+  Online
+  Away
+  Offline
+  Busy
+}
+
+enum ChatThreadType {
+  Direct
+  Group
+  Project
+}
+
+enum ChatMessageType {
+  Text
+  VoiceNote
+  File
+  System
+}
+
+enum AnomalyStatus {
+  Open
+  Acknowledged
+  Resolved
+  Dismissed
+}
+
+enum AnomalySeverity {
+  Low
+  Medium
+  High
+  Critical
+}
+
+enum AnomalyType {
+  RepeatedLateCheckIn
+  MissingCheckOut
+  ExcessiveBreak
+  OvertimeSpike
+  TimesheetMismatch
+  GeofenceFailure
+  UnusualPattern
+}
+
+enum TimesheetStatus {
+  Draft
+  Submitted
+  Approved
+  Rejected
+}
+
+// =============================================================================
+// COMPANY & USER MODELS
+// =============================================================================
+
+/// Company entity - single tenant for MVP
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?
+  logoUrl   String?
+  timezone  String   @default("Asia/Kolkata")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users           User[]
+  projects        Project[]
+  officeLocations OfficeLocation[]
+  leaveTypes      LeaveTypeConfig[]
+  holidays        Holiday[]
+  workPolicy      WorkPolicy?
+  retentionPolicy RetentionPolicy?
+  geofencePolicy  GeofencePolicy?
+  anomalyRules    AnomalyRule[]
+
+  @@map("companies")
+}
+
+/// User entity for authentication and role management
+model User {
+  id           String    @id @default(uuid())
+  companyId    String
+  email        String    @unique
+  passwordHash String
+  phone        String?
+  role         UserRole  @default(Employee)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  company         Company          @relation(fields: [companyId], references: [id])
+  profile         EmployeeProfile?
+  devices         DeviceRecord[]
+  attendanceDays  AttendanceDay[]
+  timesheetEntries TimesheetEntry[]
+  leaveBalances   LeaveBalance[]
+  leaveRequests   LeaveRequest[]
+  approvedLeaves  LeaveRequest[]   @relation("LeaveApprover")
+  presenceSession PresenceSession?
+  heartbeats      HeartbeatEvent[]
+  chatMemberships ChatMember[]
+  sentMessages    ChatMessage[]
+  anomalyEvents   AnomalyEvent[]   @relation("AnomalySubject")
+  acknowledgedAnomalies AnomalyEvent[] @relation("AnomalyAcknowledger")
+  resolvedAnomalies AnomalyEvent[] @relation("AnomalyResolver")
+  auditLogs       AuditLog[]       @relation("AuditActor")
+  overriddenEvents AttendanceEvent[] @relation("AttendanceOverrider")
+  managedProjects Project[]        @relation("ProjectManager")
+  managedEmployees EmployeeProfile[] @relation("EmployeeManager")
+
+  @@index([companyId])
+  @@index([email])
+  @@map("users")
+}
+
+/// Employee profile with personal and work details
+model EmployeeProfile {
+  id           String         @id @default(uuid())
+  userId       String         @unique
+  employeeCode String         @unique
+  firstName    String
+  lastName     String
+  designation  String
+  department   String?
+  timezone     String         @default("Asia/Kolkata")
+  status       EmployeeStatus @default(Active)
+  managerId    String?
+  avatarUrl    String?
+  joinDate     DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relations
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager User? @relation("EmployeeManager", fields: [managerId], references: [id])
+
+  @@index([employeeCode])
+  @@index([managerId])
+  @@map("employee_profiles")
+}
+
+/// Device records for verified devices (OTP verification)
+model DeviceRecord {
+  id          String   @id @default(uuid())
+  userId      String
+  fingerprint String
+  deviceName  String
+  platform    String
+  isVerified  Boolean  @default(false)
+  lastUsedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fingerprint])
+  @@index([userId])
+  @@map("device_records")
+}
+
+// =============================================================================
+// PROJECT & TASK MODELS
+// =============================================================================
+
+/// Projects for timesheet categorization
+model Project {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  managerId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  company         Company          @relation(fields: [companyId], references: [id])
+  manager         User?            @relation("ProjectManager", fields: [managerId], references: [id])
+  tasks           Task[]
+  timesheetEntries TimesheetEntry[]
+  chatThreads     ChatThread[]
+
+  @@index([companyId])
+  @@index([code])
+  @@map("projects")
+}
+
+/// Tasks within projects
+model Task {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  code        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  project         Project          @relation(fields: [projectId], references: [id])
+  timesheetEntries TimesheetEntry[]
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@map("tasks")
+}
+
+// =============================================================================
+// ATTENDANCE MODELS
+// =============================================================================
+
+/// Daily attendance record per user
+model AttendanceDay {
+  id                String   @id @default(uuid())
+  userId            String
+  date              DateTime @db.Date
+  totalWorkMinutes  Int      @default(0)
+  totalBreakMinutes Int      @default(0)
+  totalLunchMinutes Int      @default(0)
+  overtimeMinutes   Int      @default(0)
+  isComplete        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user   User              @relation(fields: [userId], references: [id])
+  events AttendanceEvent[]
+  breaks BreakSegment[]
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("attendance_days")
+}
+
+/// Check-in and check-out events
+model AttendanceEvent {
+  id                 String             @id @default(uuid())
+  attendanceDayId    String
+  type               AttendanceEventType
+  timestamp          DateTime
+  workMode           WorkMode
+  latitude           Decimal?           @db.Decimal(10, 8)
+  longitude          Decimal?           @db.Decimal(11, 8)
+  verificationStatus VerificationStatus @default(None)
+  deviceFingerprint  String?
+  notes              String?
+  isOverride         Boolean            @default(false)
+  overrideReason     String?
+  overrideBy         String?
+  createdAt          DateTime           @default(now())
+
+  // Relations
+  attendanceDay AttendanceDay @relation(fields: [attendanceDayId], references: [id], onDelete: Cascade)
+  overrider     User?         @relation("AttendanceOverrider", fields: [overrideBy], references: [id])
+
+  @@index([attendanceDayId])
+  @@index([timestamp])
+  @@map("attendance_events")
+}
+
+/// Break and lunch segments
+model BreakSegment {
+  id              String    @id @default(uuid())
+  attendanceDayId String
+  type            BreakType
+  startTime       DateTime
+  endTime         DateTime?
+  durationMinutes Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  attendanceDay AttendanceDay @relation(fields: [attendanceDayId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceDayId])
+  @@map("break_segments")
+}
+
+// =============================================================================
+// TIMESHEET MODELS
+// =============================================================================
+
+/// Manual time tracking entries
+model TimesheetEntry {
+  id        String          @id @default(uuid())
+  userId    String
+  date      DateTime        @db.Date
+  projectId String
+  taskId    String
+  minutes   Int
+  notes     String?
+  status    TimesheetStatus @default(Draft)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // Relations
+  user        User                  @relation(fields: [userId], references: [id])
+  project     Project               @relation(fields: [projectId], references: [id])
+  task        Task                  @relation(fields: [taskId], references: [id])
+  attachments TimesheetAttachment[]
+
+  @@index([userId, date])
+  @@index([projectId])
+  @@map("timesheet_entries")
+}
+
+/// File attachments for timesheets
+model TimesheetAttachment {
+  id               String   @id @default(uuid())
+  timesheetEntryId String
+  fileName         String
+  fileUrl          String
+  fileType         String
+  fileSize         Int
+  createdAt        DateTime @default(now())
+
+  // Relations
+  timesheetEntry TimesheetEntry @relation(fields: [timesheetEntryId], references: [id], onDelete: Cascade)
+
+  @@index([timesheetEntryId])
+  @@map("timesheet_attachments")
+}
+
+// =============================================================================
+// LEAVE MODELS
+// =============================================================================
+
+/// Leave type definitions
+model LeaveTypeConfig {
+  id              String        @id @default(uuid())
+  companyId       String
+  name            String
+  code            LeaveTypeCode
+  description     String?
+  defaultDays     Int
+  carryForward    Boolean       @default(false)
+  maxCarryForward Int           @default(0)
+  requiresApproval Boolean      @default(true)
+  isPaid          Boolean       @default(true)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  company       Company        @relation(fields: [companyId], references: [id])
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("leave_type_configs")
+}
+
+/// Per-user leave balances
+model LeaveBalance {
+  id          String   @id @default(uuid())
+  userId      String
+  leaveTypeId String
+  year        Int
+  allocated   Decimal  @db.Decimal(4, 1)
+  used        Decimal  @default(0) @db.Decimal(4, 1)
+  pending     Decimal  @default(0) @db.Decimal(4, 1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user      User            @relation(fields: [userId], references: [id])
+  leaveType LeaveTypeConfig @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([userId, leaveTypeId, year])
+  @@index([userId, year])
+  @@map("leave_balances")
+}
+
+/// Leave applications
+model LeaveRequest {
+  id              String             @id @default(uuid())
+  userId          String
+  leaveTypeId     String
+  startDate       DateTime           @db.Date
+  endDate         DateTime           @db.Date
+  totalDays       Decimal            @db.Decimal(4, 1)
+  reason          String
+  status          LeaveRequestStatus @default(Pending)
+  approvedBy      String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // Relations
+  user      User            @relation(fields: [userId], references: [id])
+  leaveType LeaveTypeConfig @relation(fields: [leaveTypeId], references: [id])
+  approver  User?           @relation("LeaveApprover", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("leave_requests")
+}
+
+/// Company holiday calendar
+model Holiday {
+  id         String   @id @default(uuid())
+  companyId  String
+  name       String
+  date       DateTime @db.Date
+  isOptional Boolean  @default(false)
+  year       Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, date])
+  @@index([companyId, year])
+  @@map("holidays")
+}
+
+// =============================================================================
+// PRESENCE MODELS
+// =============================================================================
+
+/// User presence session
+model PresenceSession {
+  id               String         @id @default(uuid())
+  userId           String         @unique
+  status           PresenceStatus @default(Offline)
+  lastSeenAt       DateTime       @default(now())
+  currentWorkMode  WorkMode?
+  currentProjectId String?
+  currentTaskId    String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("presence_sessions")
+}
+
+/// Heartbeat events for presence tracking
+model HeartbeatEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  timestamp DateTime @default(now())
+  projectId String?
+  taskId    String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+  @@map("heartbeat_events")
+}
+
+// =============================================================================
+// CHAT MODELS
+// =============================================================================
+
+/// Chat conversation threads
+model ChatThread {
+  id            String         @id @default(uuid())
+  type          ChatThreadType
+  name          String?
+  projectId     String?
+  lastMessageAt DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  project  Project?      @relation(fields: [projectId], references: [id])
+  members  ChatMember[]
+  messages ChatMessage[]
+
+  @@index([type])
+  @@index([projectId])
+  @@map("chat_threads")
+}
+
+/// Thread membership
+model ChatMember {
+  id          String    @id @default(uuid())
+  threadId    String
+  userId      String
+  joinedAt    DateTime  @default(now())
+  lastReadAt  DateTime?
+  unreadCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([userId])
+  @@map("chat_members")
+}
+
+/// Individual messages
+model ChatMessage {
+  id              String          @id @default(uuid())
+  threadId        String
+  senderId        String
+  type            ChatMessageType
+  content         String?
+  attachmentUrl   String?
+  attachmentType  String?
+  durationSeconds Int?
+  isEdited        Boolean         @default(false)
+  editedAt        DateTime?
+  createdAt       DateTime        @default(now())
+
+  // Relations
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User       @relation(fields: [senderId], references: [id])
+
+  @@index([threadId, createdAt])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
+// =============================================================================
+// GEOFENCE MODELS
+// =============================================================================
+
+/// Office locations for geofencing
+model OfficeLocation {
+  id           String   @id @default(uuid())
+  companyId    String
+  name         String
+  address      String
+  latitude     Decimal  @db.Decimal(10, 8)
+  longitude    Decimal  @db.Decimal(11, 8)
+  radiusMeters Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("office_locations")
+}
+
+/// Geofence policy settings
+model GeofencePolicy {
+  id                     String   @id @default(uuid())
+  companyId              String   @unique
+  isEnabled              Boolean  @default(false)
+  requireGeofenceForOffice Boolean @default(false)
+  allowBypassWithReason  Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("geofence_policies")
+}
+
+// =============================================================================
+// ANOMALY MODELS
+// =============================================================================
+
+/// Anomaly detection rule configuration
+model AnomalyRule {
+  id          String          @id @default(uuid())
+  companyId   String
+  type        AnomalyType
+  name        String
+  description String
+  isEnabled   Boolean         @default(true)
+  severity    AnomalySeverity
+  threshold   Int
+  windowDays  Int
+  config      Json            @default("{}")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  company  Company        @relation(fields: [companyId], references: [id])
+  events   AnomalyEvent[]
+
+  @@unique([companyId, type])
+  @@index([companyId])
+  @@map("anomaly_rules")
+}
+
+/// Detected anomaly events
+model AnomalyEvent {
+  id              String          @id @default(uuid())
+  userId          String
+  ruleId          String
+  type            AnomalyType
+  severity        AnomalySeverity
+  status          AnomalyStatus   @default(Open)
+  title           String
+  description     String
+  data            Json
+  detectedAt      DateTime        @default(now())
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  resolvedBy      String?
+  resolvedAt      DateTime?
+  resolutionNotes String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  user         User        @relation("AnomalySubject", fields: [userId], references: [id])
+  rule         AnomalyRule @relation(fields: [ruleId], references: [id])
+  acknowledger User?       @relation("AnomalyAcknowledger", fields: [acknowledgedBy], references: [id])
+  resolver     User?       @relation("AnomalyResolver", fields: [resolvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([detectedAt])
+  @@map("anomaly_events")
+}
+
+// =============================================================================
+// POLICY MODELS
+// =============================================================================
+
+/// Work hours and rules policy
+model WorkPolicy {
+  id                       String   @id @default(uuid())
+  companyId                String   @unique
+  standardWorkHours        Int      @default(8)
+  maxWorkHours             Int      @default(12)
+  overtimeThresholdMinutes Int      @default(480)
+  maxOvertimeMinutes       Int      @default(240)
+  breakDurationMinutes     Int      @default(15)
+  lunchDurationMinutes     Int      @default(60)
+  graceMinutesLate         Int      @default(15)
+  graceMinutesEarly        Int      @default(15)
+  requireTimesheetNotes    Boolean  @default(false)
+  maxTimesheetMinutesPerDay Int     @default(1440)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("work_policies")
+}
+
+/// Data retention policy settings
+model RetentionPolicy {
+  id                     String   @id @default(uuid())
+  companyId              String   @unique
+  chatRetentionDays      Int      @default(365)
+  attachmentRetentionDays Int     @default(365)
+  anomalyRetentionDays   Int      @default(730)
+  auditLogRetentionDays  Int      @default(2555)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@map("retention_policies")
+}
+
+// =============================================================================
+// AUDIT MODELS
+// =============================================================================
+
+/// Audit log for tracking sensitive actions
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  before     Json?
+  after      Json?
+  reason     String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  actor User @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
