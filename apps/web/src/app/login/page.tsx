@@ -4,27 +4,42 @@
  * Login Page
  *
  * Handles user authentication with email and password.
+ * Redirects to role-appropriate dashboard on success.
  */
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { login, isLoading, error, user } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Get redirect URL from query params
+  const redirectUrl = searchParams.get('redirect');
+
+  // If already logged in, redirect
+  useEffect(() => {
+    if (user) {
+      const destination = redirectUrl || '/dashboard';
+      router.push(destination);
+    }
+  }, [user, redirectUrl, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
-      router.push('/dashboard');
+    const dashboardRoute = await login(email, password);
+    if (dashboardRoute) {
+      // Use redirect URL if provided, otherwise use role-based dashboard
+      router.push(redirectUrl || dashboardRoute);
     }
   };
 
@@ -117,9 +132,9 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
               Forgot password?
-            </a>
+            </Link>
           </div>
         </div>
 

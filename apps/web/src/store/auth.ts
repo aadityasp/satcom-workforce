@@ -2,10 +2,13 @@
  * Auth Store
  *
  * Manages authentication state using Zustand.
+ * Sets cookies for middleware access during SSR.
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { loginApi, logoutApi, refreshAccessToken } from '@/lib/api';
+import { getDashboardRoute } from '@/lib/auth';
 
 interface User {
   id: string;
@@ -27,13 +30,31 @@ interface AuthState {
   error: string | null;
   _hasHydrated: boolean;
 
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<string | false>;
+  logout: () => Promise<void>;
+  refreshTokens: () => Promise<boolean>;
   setError: (error: string | null) => void;
   setHasHydrated: (state: boolean) => void;
+  clearAuth: () => void;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003/api/v1';
+/**
+ * Set auth cookies for middleware access
+ */
+function setAuthCookies(accessToken: string, refreshToken: string, expiresIn: number) {
+  // Access token cookie - short lived
+  document.cookie = `access_token=${accessToken}; path=/; max-age=${expiresIn}; SameSite=Lax`;
+  // Refresh token cookie - 7 days
+  document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+}
+
+/**
+ * Clear auth cookies
+ */
+function clearAuthCookies() {
+  document.cookie = 'access_token=; path=/; max-age=0';
+  document.cookie = 'refresh_token=; path=/; max-age=0';
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -53,39 +74,80 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const res = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-          });
+          const data = await loginApi({ email, password });
 
-          const data = await res.json();
-
-          if (!res.ok || !data.success) {
-            set({ isLoading: false, error: data.error?.message || 'Login failed' });
-            return false;
-          }
+          // Set cookies for middleware
+          setAuthCookies(data.accessToken, data.refreshToken, data.expiresIn);
 
           set({
-            user: data.data.user,
-            accessToken: data.data.accessToken,
-            refreshToken: data.data.refreshToken,
+            user: data.user as User,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
             isLoading: false,
             error: null,
           });
 
-          return true;
+          // Return the dashboard route for this role
+          return getDashboardRoute(data.user.role);
         } catch (err) {
-          set({ isLoading: false, error: 'Network error. Please try again.' });
+          const message = err instanceof Error ? err.message : 'Network error. Please try again.';
+          set({ isLoading: false, error: message });
           return false;
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        const { refreshToken } = get();
+
+        try {
+          await logoutApi(refreshToken || undefined);
+        } catch {
+          // Ignore logout errors - clear state anyway
+        }
+
+        clearAuthCookies();
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
+        });
+      },
+
+      refreshTokens: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) return false;
+
+        try {
+          const data = await refreshAccessToken(refreshToken);
+
+          // Update cookies and state
+          setAuthCookies(data.accessToken, data.refreshToken, data.expiresIn);
+
+          set({
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+          });
+
+          return true;
+        } catch {
+          // Refresh failed - clear auth
+          clearAuthCookies();
+          set({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+          });
+          return false;
+        }
+      },
+
+      clearAuth: () => {
+        clearAuthCookies();
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          error: null,
         });
       },
 
@@ -100,6 +162,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // Sync cookies on hydration (in case localStorage has tokens but cookies don't)
+        if (state?.accessToken && state?.refreshToken) {
+          setAuthCookies(state.accessToken, state.refreshToken, 900); // 15min default
+        }
       },
     }
   )
