@@ -151,19 +151,86 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| ... | ... | ... |
+| AUTH-01 | 1 | Pending |
+| AUTH-02 | 1 | Pending |
+| AUTH-03 | 1 | Pending |
+| AUTH-04 | 1 | Pending |
+| AUTH-05 | 1 | Pending |
+| AUTH-06 | 1 | Pending |
+| ATTN-01 | 2 | Pending |
+| ATTN-02 | 2 | Pending |
+| ATTN-03 | 2 | Pending |
+| ATTN-04 | 2 | Pending |
+| ATTN-05 | 2 | Pending |
+| ATTN-06 | 2 | Pending |
+| ATTN-07 | 2 | Pending |
+| TIME-01 | 3 | Pending |
+| TIME-02 | 3 | Pending |
+| TIME-03 | 3 | Pending |
+| TIME-04 | 3 | Pending |
+| TIME-05 | 3 | Pending |
+| TIME-06 | 3 | Pending |
+| TIME-07 | 3 | Pending |
+| TIME-08 | 3 | Pending |
+| LOCN-01 | 4 | Pending |
+| LOCN-02 | 4 | Pending |
+| LOCN-03 | 4 | Pending |
+| LOCN-04 | 4 | Pending |
+| LOCN-05 | 4 | Pending |
+| LOCN-06 | 4 | Pending |
+| LOCN-07 | 4 | Pending |
+| LOCN-08 | 4 | Pending |
+| ACTV-01 | 5 | Pending |
+| ACTV-02 | 5 | Pending |
+| ACTV-03 | 5 | Pending |
+| ACTV-04 | 5 | Pending |
+| ACTV-05 | 5 | Pending |
+| ACTV-06 | 5 | Pending |
+| PRES-01 | 5 | Pending |
+| PRES-02 | 5 | Pending |
+| PRES-03 | 5 | Pending |
+| PRES-04 | 5 | Pending |
+| PRES-05 | 5 | Pending |
+| PRES-06 | 5 | Pending |
+| CHAT-01 | 6 | Pending |
+| CHAT-02 | 6 | Pending |
+| CHAT-03 | 6 | Pending |
+| CHAT-04 | 6 | Pending |
+| CHAT-05 | 6 | Pending |
+| CHAT-06 | 6 | Pending |
+| REPT-01 | 7 | Pending |
+| REPT-02 | 7 | Pending |
+| REPT-03 | 7 | Pending |
+| REPT-04 | 7 | Pending |
+| REPT-05 | 7 | Pending |
+| REPT-06 | 7 | Pending |
+| MOBL-01 | 8 | Pending |
+| MOBL-02 | 8 | Pending |
+| MOBL-03 | 8 | Pending |
+| MOBL-04 | 8 | Pending |
+| MOBL-05 | 8 | Pending |
+| MOBL-06 | 8 | Pending |
+| MOBL-07 | 8 | Pending |
+| DOCS-01 | 9 | Pending |
+| DOCS-02 | 9 | Pending |
+| DOCS-03 | 9 | Pending |
+| DOCS-04 | 9 | Pending |
+| DOCS-05 | 9 | Pending |
+| ADMN-01 | 9 | Pending |
+| ADMN-02 | 9 | Pending |
+| ADMN-03 | 9 | Pending |
+| ADMN-04 | 3 | Pending |
+| ADMN-05 | 9 | Pending |
 
 **Coverage:**
 - v1 requirements: 57 total
-- Mapped to phases: 0
-- Unmapped: 57 ⚠️
+- Mapped to phases: 57 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-24*
-*Last updated: 2026-01-24 after initial definition*
+*Last updated: 2026-01-24 after roadmap creation*
