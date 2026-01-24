@@ -7,14 +7,14 @@
 
 Requirements for initial release. Each maps to roadmap phases.
 
-### Authentication
+### Authentication ✓
 
-- [ ] **AUTH-01**: User can log in with email and password
-- [ ] **AUTH-02**: User session persists across browser/app refresh (JWT with refresh tokens)
-- [ ] **AUTH-03**: User can log out from any device
-- [ ] **AUTH-04**: User can reset password via email link
-- [ ] **AUTH-05**: All 4 roles have correct permissions (SuperAdmin, HR, Manager, Employee)
-- [ ] **AUTH-06**: Protected routes redirect unauthenticated users to login
+- [x] **AUTH-01**: User can log in with email and password
+- [x] **AUTH-02**: User session persists across browser/app refresh (JWT with refresh tokens)
+- [x] **AUTH-03**: User can log out from any device
+- [x] **AUTH-04**: User can reset password via email link
+- [x] **AUTH-05**: All 4 roles have correct permissions (SuperAdmin, HR, Manager, Employee)
+- [x] **AUTH-06**: Protected routes redirect unauthenticated users to login
 
 ### Attendance
 
