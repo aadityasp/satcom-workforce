@@ -37,6 +37,8 @@ export type { CheckInLocation } from './useCheckInLocations';
 
 export { usePresence } from './usePresence';
 
+export { useDebounce } from './useDebounce';
+
 export { useChat } from './useChat';
 export {
   useChatStore,
