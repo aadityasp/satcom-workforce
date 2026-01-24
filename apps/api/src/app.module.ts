@@ -10,6 +10,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { PrismaModule } from './prisma/prisma.module';
+import { EmailModule } from './common/email/email.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AttendanceModule } from './attendance/attendance.module';
@@ -53,6 +54,9 @@ import { StorageModule } from './storage/storage.module';
 
     // Database
     PrismaModule,
+
+    // Global services
+    EmailModule,
 
     // Feature modules
     AuthModule,
