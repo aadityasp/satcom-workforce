@@ -34,3 +34,5 @@ export type {
 
 export { useCheckInLocations } from './useCheckInLocations';
 export type { CheckInLocation } from './useCheckInLocations';
+
+export { usePresence } from './usePresence';
