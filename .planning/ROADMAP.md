@@ -44,7 +44,7 @@
 
 **Dependencies:** None (foundation phase)
 
-**Plans:** 3 plans ✓
+**Plans:** 3 plans
 
 **Status:** Complete (2026-01-24)
 
@@ -78,7 +78,7 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth)
 
-**Plans:** 5 plans ✓
+**Plans:** 5 plans
 
 **Status:** Complete (2026-01-24)
 
@@ -107,7 +107,7 @@ Plans:
 - ADMN-04: Super Admin manages projects/tasks
 
 **Success Criteria:**
-1. User can create timesheet entry with project → task
+1. User can create timesheet entry with project -> task
 2. User can add hours, notes, and file attachment
 3. System rejects entry exceeding 24h total
 4. User can edit today's entries only
@@ -116,7 +116,7 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth)
 
-**Plans:** 4 plans ✓
+**Plans:** 4 plans
 
 **Status:** Complete (2026-01-24)
 
@@ -152,7 +152,7 @@ Plans:
 
 **Dependencies:** Phase 2 (Attendance)
 
-**Plans:** 4 plans ✓
+**Plans:** 4 plans
 
 **Status:** Complete (2026-01-24)
 
@@ -192,7 +192,7 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth), Phase 3 (Timesheets for tasks)
 
-**Plans:** 4 plans ✓
+**Plans:** 4 plans
 
 **Status:** Complete (2026-01-24)
 
@@ -226,7 +226,13 @@ Plans:
 
 **Dependencies:** Phase 1 (Auth)
 
-**Estimated Plans:** 3-4
+**Plans:** 4 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Schema extension with MessageStatus, enhanced API with edit/delete/search
+- [ ] 06-02-PLAN.md — Enhanced ChatGateway with send/deliver/read events
+- [ ] 06-03-PLAN.md — Zustand chat store and useChat hook
+- [ ] 06-04-PLAN.md — Chat UI components and page
 
 ---
 
