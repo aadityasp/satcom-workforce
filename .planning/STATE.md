@@ -18,7 +18,7 @@ Progress: ░░░░░░░░░░ 0%
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Foundation & Auth | ○ Pending | 0/0 |
+| 1 | Foundation & Auth | ◆ Planning | 3/3 |
 | 2 | Attendance Core | ○ Pending | 0/0 |
 | 3 | Timesheets & Projects | ○ Pending | 0/0 |
 | 4 | Location & Geofence | ○ Pending | 0/0 |
@@ -30,13 +30,14 @@ Progress: ░░░░░░░░░░ 0%
 
 ## Next Action
 
-**Run:** `/gsd:discuss-phase 1` or `/gsd:plan-phase 1`
+**Run:** `/gsd:execute-phase 1`
 
 ## Session History
 
 | Date | Action | Outcome |
 |------|--------|---------|
 | 2026-01-24 | Project initialized | PROJECT.md, REQUIREMENTS.md, ROADMAP.md created |
+| 2026-01-24 | Phase 1 planned | 3 plans in 2 waves, research complete |
 
 ## Configuration
 

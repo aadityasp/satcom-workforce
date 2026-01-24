@@ -44,7 +44,12 @@
 
 **Dependencies:** None (foundation phase)
 
-**Estimated Plans:** 3-4
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Enhance NestJS auth with dual-token JWT and DB-backed refresh tokens
+- [ ] 01-02-PLAN.md — Next.js middleware for route protection and role-based access
+- [ ] 01-03-PLAN.md — Password reset flow with email sending
 
 ---
 
