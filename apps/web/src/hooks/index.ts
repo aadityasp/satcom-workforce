@@ -31,3 +31,6 @@ export type {
   CreateLocationInput,
   UpdateLocationInput,
 } from './useLocations';
+
+export { useCheckInLocations } from './useCheckInLocations';
+export type { CheckInLocation } from './useCheckInLocations';
