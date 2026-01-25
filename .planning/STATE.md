@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-25 (Phase 8 in progress)
+**Updated:** 2026-01-25 (Phase 8 plan 2 complete)
 
 ## Project Reference
 
@@ -25,12 +25,12 @@ Progress: ████████░░ 80%
 | 5 | Presence & Activity | Done | 4/4 |
 | 6 | Chat | In Progress | 3/4 |
 | 7 | Reports & Dashboards | Done | 3/3 |
-| 8 | Mobile App | In Progress | 1/4 |
+| 8 | Mobile App | In Progress | 2/4 |
 | 9 | Admin & Documentation | Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 08-02` to continue Mobile App phase
+**Run:** `/gsd:execute-plan 08-03` to continue Mobile App phase
 
 ## Accumulated Decisions
 
@@ -71,6 +71,9 @@ Progress: ████████░░ 80%
 | 08-01 | Foreground permission required before background | expo-location requirement; background is optional |
 | 08-01 | Accuracy.High for check-in, Accuracy.Balanced for heartbeats | Battery vs precision tradeoff |
 | 08-01 | OfflineQueue persists to AsyncStorage | Recover queued actions after app restart |
+| 08-02 | Alert.alert for location explanation | User-friendly permission request |
+| 08-02 | Work mode radio selection in modal | Clear choice UI for check-in |
+| 08-02 | Summary alert on checkout | Show work/break/overtime stats |
 
 ## Session History
 
@@ -101,11 +104,12 @@ Progress: ████████░░ 80%
 | 2026-01-25 | Phase 7 plan 3 executed | Dashboard pages with role routing, Manager & HR views |
 | 2026-01-25 | Phase 7 verified | Reports & Dashboards complete - Manager/HR dashboards working |
 | 2026-01-25 | Phase 8 plan 1 executed | Mobile foundation with offline support, location, API client |
+| 2026-01-25 | Phase 8 plan 2 executed | Mobile attendance with GPS capture, hooks, UI components |
 
 ## Session Continuity
 
-Last session: 2026-01-25T14:56:32Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-01-25T15:05:45Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
 
 ## Configuration
