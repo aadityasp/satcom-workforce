@@ -3,6 +3,7 @@
  *
  * Main dashboard showing attendance status, quick actions,
  * and overview cards for the logged-in user.
+ * Uses real attendance data from API with location capture.
  */
 
 import { useState, useEffect } from 'react';
@@ -13,13 +14,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
-  Clock,
-  Coffee,
-  LogOut,
-  MapPin,
   FileText,
   Calendar,
   Users,
@@ -28,31 +26,31 @@ import {
 } from 'lucide-react-native';
 import { useAuthStore } from '../../src/store/auth';
 import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
-
-/**
- * Attendance status interface
- */
-interface AttendanceStatus {
-  isCheckedIn: boolean;
-  checkInTime?: string;
-  workMode?: string;
-  totalWorkMinutes: number;
-  totalBreakMinutes: number;
-}
+import { useAttendance, useLocation } from '../../src/hooks';
+import type { WorkMode, BreakType, CheckOutSummary } from '../../src/hooks/useAttendance';
+import { AttendanceCard, CheckInModal } from '../../src/components/attendance';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
-  const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
 
-  // Mock attendance data
-  const [attendance, setAttendance] = useState<AttendanceStatus>({
-    isCheckedIn: true,
-    checkInTime: '09:15',
-    workMode: 'Office',
-    totalWorkMinutes: 245,
-    totalBreakMinutes: 30,
-  });
+  // Real attendance data from API
+  const {
+    attendance,
+    isLoading,
+    isActionLoading,
+    error,
+    refresh,
+    checkIn,
+    checkOut,
+    startBreak,
+    endBreak,
+    clearError,
+  } = useAttendance();
+
+  // Location hook for GPS capture
+  const { getCurrentPosition } = useLocation();
 
   // Update time every minute
   useEffect(() => {
@@ -60,14 +58,14 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  /**
-   * Format minutes to hours and minutes
-   */
-  const formatDuration = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
+  // Show error alerts
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [
+        { text: 'OK', onPress: clearError },
+      ]);
+    }
+  }, [error, clearError]);
 
   /**
    * Get greeting based on time of day
@@ -83,10 +81,55 @@ export default function HomeScreen() {
    * Handle pull-to-refresh
    */
   const onRefresh = async () => {
-    setRefreshing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
+    await refresh();
+  };
+
+  /**
+   * Handle check-in with location capture
+   */
+  const handleCheckIn = async (workMode: WorkMode) => {
+    const coords = await getCurrentPosition();
+    const success = await checkIn(workMode, coords?.latitude, coords?.longitude);
+    if (success) {
+      setShowCheckInModal(false);
+    }
+  };
+
+  /**
+   * Handle check-out with location capture
+   */
+  const handleCheckOut = async () => {
+    const coords = await getCurrentPosition();
+    const summary: CheckOutSummary | null = await checkOut(coords?.latitude, coords?.longitude);
+
+    if (summary) {
+      const hours = Math.floor(summary.workedMinutes / 60);
+      const mins = summary.workedMinutes % 60;
+      const breakHours = Math.floor(summary.breakMinutes / 60);
+      const breakMins = summary.breakMinutes % 60;
+
+      Alert.alert(
+        'Checked Out',
+        `Work Summary:\n\nWorked: ${hours}h ${mins}m\nBreaks: ${breakHours}h ${breakMins}m${
+          summary.overtime > 0 ? `\nOvertime: ${Math.floor(summary.overtime / 60)}h ${summary.overtime % 60}m` : ''
+        }`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  /**
+   * Handle start break
+   */
+  const handleBreak = async (type: BreakType) => {
+    await startBreak(type);
+  };
+
+  /**
+   * Handle end break
+   */
+  const handleEndBreak = async () => {
+    await endBreak();
   };
 
   return (
@@ -94,7 +137,7 @@ export default function HomeScreen() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={isLoading && !isActionLoading} onRefresh={onRefresh} />
       }
     >
       {/* Welcome Section */}
@@ -113,84 +156,25 @@ export default function HomeScreen() {
       </Animated.View>
 
       {/* Attendance Card */}
-      <Animated.View
-        entering={FadeInDown.duration(300).delay(200)}
-        style={styles.attendanceCard}
-      >
-        <View style={styles.attendanceHeader}>
-          <View style={styles.attendanceInfo}>
-            <View
-              style={[
-                styles.attendanceIcon,
-                attendance.isCheckedIn && styles.attendanceIconActive,
-              ]}
-            >
-              <Clock
-                size={28}
-                color={attendance.isCheckedIn ? colors.semantic.success : colors.silver[400]}
-              />
-            </View>
-            <View>
-              <Text style={styles.attendanceLabel}>Today's Status</Text>
-              <Text style={styles.attendanceStatus}>
-                {attendance.isCheckedIn
-                  ? `Checked in at ${attendance.checkInTime}`
-                  : 'Not checked in'}
-              </Text>
-              {attendance.isCheckedIn && (
-                <Text style={styles.workMode}>{attendance.workMode}</Text>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.attendanceActions}>
-          {attendance.isCheckedIn ? (
-            <>
-              <TouchableOpacity style={styles.secondaryButton}>
-                <Coffee size={18} color={colors.navy[700]} />
-                <Text style={styles.secondaryButtonText}>Break</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.checkOutButton}>
-                <LogOut size={18} color="#FFFFFF" />
-                <Text style={styles.checkOutButtonText}>Check Out</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity style={styles.checkInButton}>
-              <MapPin size={18} color="#FFFFFF" />
-              <Text style={styles.checkInButtonText}>Check In</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Time Summary */}
-        {attendance.isCheckedIn && (
-          <View style={styles.timeSummary}>
-            <View style={styles.timeItem}>
-              <Text style={styles.timeLabel}>Work</Text>
-              <Text style={styles.timeValue}>
-                {formatDuration(attendance.totalWorkMinutes)}
-              </Text>
-            </View>
-            <View style={styles.timeDivider} />
-            <View style={styles.timeItem}>
-              <Text style={styles.timeLabel}>Break</Text>
-              <Text style={styles.timeValue}>
-                {formatDuration(attendance.totalBreakMinutes)}
-              </Text>
-            </View>
-            <View style={styles.timeDivider} />
-            <View style={styles.timeItem}>
-              <Text style={styles.timeLabel}>Remaining</Text>
-              <Text style={[styles.timeValue, styles.timeValueHighlight]}>
-                {formatDuration(480 - attendance.totalWorkMinutes)}
-              </Text>
-            </View>
-          </View>
-        )}
+      <Animated.View entering={FadeInDown.duration(300).delay(200)}>
+        <AttendanceCard
+          attendance={attendance}
+          isLoading={isLoading}
+          isActionLoading={isActionLoading}
+          onCheckIn={() => setShowCheckInModal(true)}
+          onCheckOut={handleCheckOut}
+          onBreak={handleBreak}
+          onEndBreak={handleEndBreak}
+        />
       </Animated.View>
+
+      {/* Check-in Modal */}
+      <CheckInModal
+        visible={showCheckInModal}
+        onClose={() => setShowCheckInModal(false)}
+        onCheckIn={handleCheckIn}
+        isLoading={isActionLoading}
+      />
 
       {/* Quick Actions Grid */}
       <Animated.View
@@ -218,7 +202,7 @@ export default function HomeScreen() {
             <Users size={20} color="#16A34A" />
           </View>
           <Text style={styles.actionTitle}>Team</Text>
-          <Text style={[styles.actionSubtitle, { color: colors.semantic.success }]}>
+          <Text style={[styles.actionSubtitle, { color: '#16A34A' }]}>
             12 online
           </Text>
         </TouchableOpacity>
@@ -228,7 +212,7 @@ export default function HomeScreen() {
             <MessageSquare size={20} color="#EA580C" />
           </View>
           <Text style={styles.actionTitle}>Messages</Text>
-          <Text style={[styles.actionSubtitle, { color: colors.semantic.error }]}>
+          <Text style={[styles.actionSubtitle, { color: colors.semantic.error.main }]}>
             5 unread
           </Text>
         </TouchableOpacity>
@@ -249,7 +233,7 @@ export default function HomeScreen() {
 
         <View style={styles.activityList}>
           <View style={styles.activityItem}>
-            <View style={[styles.activityDot, { backgroundColor: colors.semantic.success }]} />
+            <View style={[styles.activityDot, { backgroundColor: colors.semantic.success.main }]} />
             <View style={styles.activityContent}>
               <Text style={styles.activityItemTitle}>Checked in at Office</Text>
               <Text style={styles.activityItemTime}>Today, 9:15 AM</Text>
@@ -263,7 +247,7 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.activityItem}>
-            <View style={[styles.activityDot, { backgroundColor: colors.semantic.warning }]} />
+            <View style={[styles.activityDot, { backgroundColor: colors.semantic.warning.main }]} />
             <View style={styles.activityContent}>
               <Text style={styles.activityItemTitle}>Late check-in flagged</Text>
               <Text style={styles.activityItemTime}>Jan 17, 9:45 AM</Text>
@@ -295,134 +279,11 @@ const styles = StyleSheet.create({
     marginTop: spacing[1],
     marginBottom: spacing[6],
   },
-  attendanceCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius['2xl'],
-    padding: spacing[5],
-    marginBottom: spacing[4],
-    ...shadows.md,
-  },
-  attendanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  attendanceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[3],
-  },
-  attendanceIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.silver[100],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  attendanceIconActive: {
-    backgroundColor: colors.semantic.success + '20',
-  },
-  attendanceLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[500],
-  },
-  attendanceStatus: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: '600',
-    color: colors.navy[900],
-  },
-  workMode: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[500],
-    marginTop: 2,
-  },
-  attendanceActions: {
-    flexDirection: 'row',
-    gap: spacing[3],
-    marginTop: spacing[5],
-  },
-  secondaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    paddingVertical: spacing[3],
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.silver[100],
-  },
-  secondaryButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.navy[700],
-  },
-  checkInButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    paddingVertical: spacing[3],
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.blue[600],
-  },
-  checkInButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  checkOutButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
-    paddingVertical: spacing[3],
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.semantic.error,
-  },
-  checkOutButtonText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  timeSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing[5],
-    paddingTop: spacing[5],
-    borderTopWidth: 1,
-    borderTopColor: colors.silver[100],
-  },
-  timeItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  timeDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.silver[200],
-  },
-  timeLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.silver[500],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  timeValue: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: '600',
-    color: colors.navy[900],
-    marginTop: spacing[1],
-  },
-  timeValueHighlight: {
-    color: colors.blue[600],
-  },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[3],
+    marginTop: spacing[4],
     marginBottom: spacing[4],
   },
   actionCard: {
@@ -448,7 +309,7 @@ const styles = StyleSheet.create({
   },
   actionSubtitle: {
     fontSize: typography.fontSize.sm,
-    color: colors.semantic.warning,
+    color: colors.semantic.warning.main,
     marginTop: 2,
   },
   activityCard: {
