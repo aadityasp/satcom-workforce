@@ -1,19 +1,19 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-25 (Phase 7 in progress)
+**Updated:** 2026-01-25 (Phase 8 in progress)
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Management sees real-time employee location, activity, and productivity — employees have a fast, friction-free app for daily work tasks.
-**Current focus:** Phase 7 - Reports & Dashboards
+**Current focus:** Phase 8 - Mobile App
 
 ## Current Status
 
 ```
-Progress: ████████░░ 70%
+Progress: ████████░░ 80%
 ```
 
 | Phase | Name | Status | Plans |
@@ -24,13 +24,13 @@ Progress: ████████░░ 70%
 | 4 | Location & Geofence | Done | 4/4 |
 | 5 | Presence & Activity | Done | 4/4 |
 | 6 | Chat | In Progress | 3/4 |
-| 7 | Reports & Dashboards | In Progress | 3/? |
-| 8 | Mobile App | Pending | 0/0 |
+| 7 | Reports & Dashboards | Done | 3/3 |
+| 8 | Mobile App | In Progress | 1/4 |
 | 9 | Admin & Documentation | Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 07-04` (if exists) or `/gsd:verify-phase 07`
+**Run:** `/gsd:execute-plan 08-02` to continue Mobile App phase
 
 ## Accumulated Decisions
 
@@ -66,6 +66,11 @@ Progress: ████████░░ 70%
 | 07-03 | Manager focuses on team status table | Primary use case: who's here today |
 | 07-03 | HR includes anomaly type/severity breakdown | Compliance monitoring needs |
 | 07-03 | NeedsAttention at top of both dashboards | Immediate visibility for actionable items |
+| 08-01 | 24-hour gcTime, 5-minute staleTime for React Query | Aggressive caching for offline-first behavior |
+| 08-01 | networkMode: offlineFirst for queries and mutations | Use cached data immediately, fetch in background |
+| 08-01 | Foreground permission required before background | expo-location requirement; background is optional |
+| 08-01 | Accuracy.High for check-in, Accuracy.Balanced for heartbeats | Battery vs precision tradeoff |
+| 08-01 | OfflineQueue persists to AsyncStorage | Recover queued actions after app restart |
 
 ## Session History
 
@@ -94,6 +99,14 @@ Progress: ████████░░ 70%
 | 2026-01-25 | Phase 7 plan 1 executed | ReportsService and ReportsController with dashboard aggregation |
 | 2026-01-25 | Phase 7 plan 2 executed | Recharts charts, dashboard widgets, PDF export utilities |
 | 2026-01-25 | Phase 7 plan 3 executed | Dashboard pages with role routing, Manager & HR views |
+| 2026-01-25 | Phase 7 verified | Reports & Dashboards complete - Manager/HR dashboards working |
+| 2026-01-25 | Phase 8 plan 1 executed | Mobile foundation with offline support, location, API client |
+
+## Session Continuity
+
+Last session: 2026-01-25T14:56:32Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
 
 ## Configuration
 
