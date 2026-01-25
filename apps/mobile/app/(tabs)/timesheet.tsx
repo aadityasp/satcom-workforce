@@ -5,249 +5,189 @@
  * against projects and tasks.
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
-  RefreshControl,
+  SafeAreaView,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Plus, Clock, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react-native';
-import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { ChevronLeft, ChevronRight, List, PlusCircle, Clock } from 'lucide-react-native';
+import { format, addDays, subDays, isToday } from 'date-fns';
+import { colors, typography, borderRadius, spacing } from '../../src/theme';
+import { useProjects } from '../../src/hooks/useProjects';
+import { useTimesheets, useCreateTimesheet, CreateTimesheetInput } from '../../src/hooks/useTimesheets';
+import { TimesheetForm } from '../../src/components/timesheets/TimesheetForm';
+import { TimesheetList } from '../../src/components/timesheets/TimesheetList';
 
 /**
- * Timesheet entry interface
+ * Tab mode - either viewing entries or adding new
  */
-interface TimesheetEntry {
-  id: string;
-  project: string;
-  task: string;
-  hours: number;
-  date: string;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  notes?: string;
+type TabMode = 'entries' | 'add';
+
+/**
+ * Format time as "Xh Ym"
+ */
+function formatTime(hours: number, minutes: number): string {
+  if (hours === 0 && minutes === 0) return '0h';
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
 }
 
-// Mock data
-const MOCK_ENTRIES: TimesheetEntry[] = [
-  {
-    id: '1',
-    project: 'Project Alpha',
-    task: 'Frontend Development',
-    hours: 6.5,
-    date: '2026-01-19',
-    status: 'draft',
-    notes: 'Implemented dashboard components',
-  },
-  {
-    id: '2',
-    project: 'Project Alpha',
-    task: 'Code Review',
-    hours: 1.5,
-    date: '2026-01-19',
-    status: 'submitted',
-  },
-  {
-    id: '3',
-    project: 'Project Beta',
-    task: 'API Integration',
-    hours: 4,
-    date: '2026-01-18',
-    status: 'approved',
-  },
-  {
-    id: '4',
-    project: 'Internal',
-    task: 'Team Meeting',
-    hours: 1,
-    date: '2026-01-18',
-    status: 'approved',
-  },
-];
+/**
+ * Calculate remaining time to 8 hours
+ */
+function calculateRemaining(hours: number, minutes: number): { hours: number; minutes: number } {
+  const totalWorked = hours * 60 + minutes;
+  const target = 8 * 60; // 8 hours in minutes
+  const remaining = Math.max(0, target - totalWorked);
+  return {
+    hours: Math.floor(remaining / 60),
+    minutes: remaining % 60,
+  };
+}
 
 export default function TimesheetScreen() {
-  const [refreshing, setRefreshing] = useState(false);
-  const [entries] = useState<TimesheetEntry[]>(MOCK_ENTRIES);
+  // Date state
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [activeTab, setActiveTab] = useState<TabMode>('entries');
 
-  /**
-   * Get status color
-   */
-  const getStatusColor = (status: TimesheetEntry['status']) => {
-    switch (status) {
-      case 'draft':
-        return colors.silver[500];
-      case 'submitted':
-        return colors.blue[600];
-      case 'approved':
-        return colors.semantic.success;
-      case 'rejected':
-        return colors.semantic.error;
+  // Data hooks
+  const { projects } = useProjects();
+  const { entries, dayTotal, isLoading, error, refresh } = useTimesheets(selectedDate);
+  const { create, isCreating, error: createError, clearError } = useCreateTimesheet();
+
+  // Clear create error when switching tabs
+  useEffect(() => {
+    if (activeTab === 'add') {
+      clearError();
     }
-  };
+  }, [activeTab, clearError]);
 
-  /**
-   * Get status icon
-   */
-  const getStatusIcon = (status: TimesheetEntry['status']) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle size={14} color={colors.semantic.success} />;
-      case 'rejected':
-        return <AlertCircle size={14} color={colors.semantic.error} />;
-      default:
-        return null;
+  // Date navigation
+  const goToPreviousDay = useCallback(() => {
+    const current = new Date(selectedDate);
+    setSelectedDate(format(subDays(current, 1), 'yyyy-MM-dd'));
+  }, [selectedDate]);
+
+  const goToNextDay = useCallback(() => {
+    const current = new Date(selectedDate);
+    setSelectedDate(format(addDays(current, 1), 'yyyy-MM-dd'));
+  }, [selectedDate]);
+
+  // Format display date
+  const displayDate = format(new Date(selectedDate), 'EEE, MMM d');
+  const isTodaySelected = isToday(new Date(selectedDate));
+
+  // Calculate remaining time
+  const remaining = calculateRemaining(dayTotal.hours, dayTotal.minutes);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (input: CreateTimesheetInput) => {
+    const success = await create(input);
+    if (success) {
+      setActiveTab('entries');
+      await refresh();
     }
-  };
-
-  /**
-   * Handle pull-to-refresh
-   */
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
-  };
-
-  /**
-   * Calculate total hours for today
-   */
-  const todayTotal = entries
-    .filter((e) => e.date === '2026-01-19')
-    .reduce((sum, e) => sum + e.hours, 0);
-
-  /**
-   * Calculate weekly total
-   */
-  const weeklyTotal = entries.reduce((sum, e) => sum + e.hours, 0);
+  }, [create, refresh]);
 
   return (
-    <View style={styles.container}>
-      {/* Summary Header */}
-      <Animated.View
-        entering={FadeInDown.duration(300)}
-        style={styles.summaryCard}
-      >
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Today</Text>
-          <Text style={styles.summaryValue}>{todayTotal}h</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Date Selector */}
+      <Animated.View entering={FadeIn.duration(200)} style={styles.dateSelector}>
+        <TouchableOpacity onPress={goToPreviousDay} style={styles.dateArrow}>
+          <ChevronLeft size={24} color={colors.navy[900]} />
+        </TouchableOpacity>
+        <View style={styles.dateInfo}>
+          <Text style={styles.dateText}>{displayDate}</Text>
+          {isTodaySelected && <Text style={styles.todayBadge}>Today</Text>}
+        </View>
+        <TouchableOpacity onPress={goToNextDay} style={styles.dateArrow}>
+          <ChevronRight size={24} color={colors.navy[900]} />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Summary Card */}
+      <Animated.View entering={FadeIn.duration(200).delay(50)} style={styles.summaryCard}>
+        <View style={styles.summarySection}>
+          <Clock size={20} color={colors.blue[600]} />
+          <View style={styles.summaryTextGroup}>
+            <Text style={styles.summaryLabel}>Logged</Text>
+            <Text style={styles.summaryValue}>
+              {formatTime(dayTotal.hours, dayTotal.minutes)}
+            </Text>
+          </View>
         </View>
         <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>This Week</Text>
-          <Text style={styles.summaryValue}>{weeklyTotal}h</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Target</Text>
-          <Text style={styles.summaryValue}>40h</Text>
+        <View style={styles.summarySection}>
+          <Clock size={20} color={colors.silver[400]} />
+          <View style={styles.summaryTextGroup}>
+            <Text style={styles.summaryLabel}>Remaining</Text>
+            <Text style={[styles.summaryValue, styles.remainingValue]}>
+              {formatTime(remaining.hours, remaining.minutes)}
+            </Text>
+          </View>
         </View>
       </Animated.View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Today's Entries */}
-        <Animated.View entering={FadeInDown.duration(300).delay(100)}>
-          <Text style={styles.sectionTitle}>Today</Text>
-          {entries
-            .filter((e) => e.date === '2026-01-19')
-            .map((entry) => (
-              <TouchableOpacity key={entry.id} style={styles.entryCard}>
-                <View style={styles.entryHeader}>
-                  <View style={styles.entryInfo}>
-                    <Text style={styles.projectName}>{entry.project}</Text>
-                    <Text style={styles.taskName}>{entry.task}</Text>
-                  </View>
-                  <View style={styles.entryRight}>
-                    <View style={styles.hoursContainer}>
-                      <Clock size={14} color={colors.silver[400]} />
-                      <Text style={styles.hoursText}>{entry.hours}h</Text>
-                    </View>
-                    <View style={styles.statusBadge}>
-                      {getStatusIcon(entry.status)}
-                      <Text
-                        style={[
-                          styles.statusText,
-                          { color: getStatusColor(entry.status) },
-                        ]}
-                      >
-                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                {entry.notes && (
-                  <Text style={styles.notes} numberOfLines={1}>
-                    {entry.notes}
-                  </Text>
-                )}
-                <ChevronRight
-                  size={20}
-                  color={colors.silver[300]}
-                  style={styles.chevron}
-                />
-              </TouchableOpacity>
-            ))}
-        </Animated.View>
+      {/* Tab Toggle */}
+      <Animated.View entering={FadeIn.duration(200).delay(100)} style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'entries' && styles.tabActive]}
+          onPress={() => setActiveTab('entries')}
+        >
+          <List size={18} color={activeTab === 'entries' ? colors.blue[600] : colors.silver[500]} />
+          <Text style={[styles.tabText, activeTab === 'entries' && styles.tabTextActive]}>
+            Entries
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'add' && styles.tabActive]}
+          onPress={() => setActiveTab('add')}
+        >
+          <PlusCircle size={18} color={activeTab === 'add' ? colors.blue[600] : colors.silver[500]} />
+          <Text style={[styles.tabText, activeTab === 'add' && styles.tabTextActive]}>
+            Add New
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
 
-        {/* Previous Entries */}
-        <Animated.View entering={FadeInDown.duration(300).delay(200)}>
-          <Text style={styles.sectionTitle}>Previous</Text>
-          {entries
-            .filter((e) => e.date !== '2026-01-19')
-            .map((entry) => (
-              <TouchableOpacity key={entry.id} style={styles.entryCard}>
-                <View style={styles.entryHeader}>
-                  <View style={styles.entryInfo}>
-                    <Text style={styles.projectName}>{entry.project}</Text>
-                    <Text style={styles.taskName}>{entry.task}</Text>
-                    <Text style={styles.entryDate}>
-                      {new Date(entry.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </Text>
-                  </View>
-                  <View style={styles.entryRight}>
-                    <View style={styles.hoursContainer}>
-                      <Clock size={14} color={colors.silver[400]} />
-                      <Text style={styles.hoursText}>{entry.hours}h</Text>
-                    </View>
-                    <View style={styles.statusBadge}>
-                      {getStatusIcon(entry.status)}
-                      <Text
-                        style={[
-                          styles.statusText,
-                          { color: getStatusColor(entry.status) },
-                        ]}
-                      >
-                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                <ChevronRight
-                  size={20}
-                  color={colors.silver[300]}
-                  style={styles.chevron}
-                />
-              </TouchableOpacity>
-            ))}
-        </Animated.View>
-      </ScrollView>
+      {/* Content Area */}
+      <View style={styles.content}>
+        {activeTab === 'entries' ? (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.listContainer}>
+            <TimesheetList
+              entries={entries}
+              isLoading={isLoading}
+              onRefresh={refresh}
+            />
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.formContainer}>
+            <TimesheetForm
+              projects={projects}
+              onSubmit={handleSubmit}
+              isSubmitting={isCreating}
+              initialDate={selectedDate}
+              error={createError}
+            />
+          </Animated.View>
+        )}
+      </View>
 
-      {/* Add Entry FAB */}
-      <TouchableOpacity style={styles.fab}>
-        <Plus size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-    </View>
+      {/* Error display for loading errors */}
+      {error && activeTab === 'entries' && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={refresh}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
@@ -256,21 +196,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.silver[50],
   },
-  summaryCard: {
+  dateSelector: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    paddingVertical: spacing[4],
+    paddingVertical: spacing[3],
     paddingHorizontal: spacing[2],
     borderBottomWidth: 1,
     borderBottomColor: colors.silver[200],
   },
-  summaryItem: {
-    flex: 1,
-    alignItems: 'center',
+  dateArrow: {
+    padding: spacing[2],
   },
-  summaryDivider: {
-    width: 1,
-    backgroundColor: colors.silver[200],
+  dateInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  dateText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: '600',
+    color: colors.navy[900],
+  },
+  todayBadge: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: '600',
+    color: colors.blue[600],
+    backgroundColor: colors.blue[50],
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderRadius: borderRadius.sm,
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.silver[200],
+  },
+  summarySection: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+  },
+  summaryTextGroup: {
+    flex: 1,
   },
   summaryLabel: {
     fontSize: typography.fontSize.xs,
@@ -282,98 +255,76 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xl,
     fontWeight: 'bold',
     color: colors.navy[900],
-    marginTop: spacing[1],
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing[4],
-    paddingBottom: 100,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: '600',
-    color: colors.silver[500],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing[3],
-    marginTop: spacing[2],
-  },
-  entryCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
-    padding: spacing[4],
-    marginBottom: spacing[3],
-    ...shadows.sm,
-  },
-  entryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  entryInfo: {
-    flex: 1,
-    marginRight: spacing[3],
-  },
-  projectName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.navy[900],
-  },
-  taskName: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[600],
     marginTop: 2,
   },
-  entryDate: {
-    fontSize: typography.fontSize.xs,
-    color: colors.silver[400],
-    marginTop: spacing[1],
-  },
-  entryRight: {
-    alignItems: 'flex-end',
-  },
-  hoursContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[1],
-  },
-  hoursText: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: '600',
-    color: colors.navy[900],
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[1],
-    marginTop: spacing[1],
-  },
-  statusText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: '500',
-  },
-  notes: {
-    fontSize: typography.fontSize.sm,
+  remainingValue: {
     color: colors.silver[500],
-    marginTop: spacing[2],
-    fontStyle: 'italic',
   },
-  chevron: {
-    position: 'absolute',
-    right: spacing[2],
-    top: '50%',
+  summaryDivider: {
+    width: 1,
+    backgroundColor: colors.silver[200],
+    marginHorizontal: spacing[4],
   },
-  fab: {
-    position: 'absolute',
-    right: spacing[4],
-    bottom: spacing[4],
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.blue[600],
-    justifyContent: 'center',
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    padding: spacing[2],
+    gap: spacing[2],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.silver[200],
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    ...shadows.lg,
+    justifyContent: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.silver[50],
+  },
+  tabActive: {
+    backgroundColor: colors.blue[50],
+  },
+  tabText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: '500',
+    color: colors.silver[500],
+  },
+  tabTextActive: {
+    color: colors.blue[600],
+  },
+  content: {
+    flex: 1,
+  },
+  listContainer: {
+    flex: 1,
+  },
+  formContainer: {
+    flex: 1,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.semantic.error.light,
+    padding: spacing[3],
+    margin: spacing[4],
+    borderRadius: borderRadius.md,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: spacing[4],
+  },
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.semantic.error.main,
+    flex: 1,
+  },
+  retryText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: '600',
+    color: colors.blue[600],
+    marginLeft: spacing[2],
   },
 });
