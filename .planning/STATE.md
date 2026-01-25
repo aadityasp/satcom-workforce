@@ -13,24 +13,24 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: ███████░░░ 65%
+Progress: ████████░░ 70%
 ```
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Foundation & Auth | ✓ Complete | 3/3 |
-| 2 | Attendance Core | ✓ Complete | 5/5 |
-| 3 | Timesheets & Projects | ✓ Complete | 4/4 |
-| 4 | Location & Geofence | ✓ Complete | 4/4 |
-| 5 | Presence & Activity | ✓ Complete | 4/4 |
-| 6 | Chat | ◐ In Progress | 3/4 |
-| 7 | Reports & Dashboards | ◐ In Progress | 2/? |
-| 8 | Mobile App | ○ Pending | 0/0 |
-| 9 | Admin & Documentation | ○ Pending | 0/0 |
+| 1 | Foundation & Auth | Done | 3/3 |
+| 2 | Attendance Core | Done | 5/5 |
+| 3 | Timesheets & Projects | Done | 4/4 |
+| 4 | Location & Geofence | Done | 4/4 |
+| 5 | Presence & Activity | Done | 4/4 |
+| 6 | Chat | In Progress | 3/4 |
+| 7 | Reports & Dashboards | In Progress | 3/? |
+| 8 | Mobile App | Pending | 0/0 |
+| 9 | Admin & Documentation | Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 07-03`
+**Run:** `/gsd:execute-plan 07-04` (if exists) or `/gsd:verify-phase 07`
 
 ## Accumulated Decisions
 
@@ -63,6 +63,9 @@ Progress: ███████░░░ 65%
 | 07-02 | Recharts 3.x with ResponsiveContainer wrapper | SSR safety for Next.js App Router |
 | 07-02 | jsPDF 4.x with jspdf-autotable 5.x for A4 portrait | Table-based PDF reports |
 | 07-02 | NeedsAttention section hides when counts are zero | Clean UI when no issues |
+| 07-03 | Manager focuses on team status table | Primary use case: who's here today |
+| 07-03 | HR includes anomaly type/severity breakdown | Compliance monitoring needs |
+| 07-03 | NeedsAttention at top of both dashboards | Immediate visibility for actionable items |
 
 ## Session History
 
@@ -90,6 +93,7 @@ Progress: ███████░░░ 65%
 | 2026-01-24 | Phase 6 plan 3 executed | Chat store with Socket.IO, useChat hook with auto-connect |
 | 2026-01-25 | Phase 7 plan 1 executed | ReportsService and ReportsController with dashboard aggregation |
 | 2026-01-25 | Phase 7 plan 2 executed | Recharts charts, dashboard widgets, PDF export utilities |
+| 2026-01-25 | Phase 7 plan 3 executed | Dashboard pages with role routing, Manager & HR views |
 
 ## Configuration
 
