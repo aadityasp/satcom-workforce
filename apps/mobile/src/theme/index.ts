@@ -5,7 +5,7 @@
  * Includes scaled values for mobile screens.
  */
 
-import { colors, spacing } from '@satcom/shared';
+import { colors } from '@satcom/shared';
 
 /**
  * Typography configuration for React Native

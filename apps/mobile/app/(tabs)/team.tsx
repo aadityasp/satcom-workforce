@@ -1,194 +1,142 @@
 /**
  * Team Tab
  *
- * Displays team members with their current availability status.
- * Allows quick messaging and viewing team member details.
+ * Displays team members with real-time presence status updates.
+ * Features WebSocket connection for live updates and status filtering.
+ *
+ * @module app/(tabs)/team
  */
 
-import { useState } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Search, MessageSquare, MapPin } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
-import type { PresenceStatus } from '@satcom/shared';
+import { usePresence } from '../../src/hooks/usePresence';
+import { TeamMemberCard } from '../../src/components/team/TeamMemberCard';
+import { TeamStatusFilter } from '../../src/components/team/TeamStatusFilter';
+import type { TeamMember } from '../../src/store/presence';
+import { useState } from 'react';
 
 /**
- * Team member interface
+ * Team screen with real-time presence updates
  */
-interface TeamMember {
-  id: string;
-  name: string;
-  designation: string;
-  status: PresenceStatus;
-  workMode?: string;
-  avatarInitials: string;
-}
-
-// Mock data
-const MOCK_TEAM: TeamMember[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    designation: 'Senior Developer',
-    status: 'Online',
-    workMode: 'Office',
-    avatarInitials: 'SJ',
-  },
-  {
-    id: '2',
-    name: 'Mike Chen',
-    designation: 'Product Manager',
-    status: 'Online',
-    workMode: 'Remote',
-    avatarInitials: 'MC',
-  },
-  {
-    id: '3',
-    name: 'Emily Davis',
-    designation: 'UX Designer',
-    status: 'Away',
-    workMode: 'Office',
-    avatarInitials: 'ED',
-  },
-  {
-    id: '4',
-    name: 'Alex Kumar',
-    designation: 'Backend Developer',
-    status: 'Online',
-    workMode: 'Customer Site',
-    avatarInitials: 'AK',
-  },
-  {
-    id: '5',
-    name: 'Jessica Lee',
-    designation: 'QA Engineer',
-    status: 'Offline',
-    avatarInitials: 'JL',
-  },
-  {
-    id: '6',
-    name: 'David Wilson',
-    designation: 'DevOps Engineer',
-    status: 'Online',
-    workMode: 'Remote',
-    avatarInitials: 'DW',
-  },
-  {
-    id: '7',
-    name: 'Maria Garcia',
-    designation: 'HR Manager',
-    status: 'Away',
-    workMode: 'Office',
-    avatarInitials: 'MG',
-  },
-  {
-    id: '8',
-    name: 'James Brown',
-    designation: 'Tech Lead',
-    status: 'Online',
-    workMode: 'Office',
-    avatarInitials: 'JB',
-  },
-];
-
 export default function TeamScreen() {
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    teamMembers,
+    isLoading,
+    isConnected,
+    statusFilter,
+    setStatusFilter,
+    refresh,
+  } = usePresence();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [team] = useState<TeamMember[]>(MOCK_TEAM);
 
   /**
-   * Get status color
+   * Calculate counts for each status
    */
-  const getStatusColor = (status: PresenceStatus) => {
-    switch (status) {
-      case 'Online':
-        return colors.semantic.success;
-      case 'Away':
-        return colors.semantic.warning;
-      case 'Offline':
-        return colors.silver[400];
+  const counts = useMemo(() => {
+    // Count from all members (pre-filter)
+    const allMembers = teamMembers;
+    return {
+      online: allMembers.filter((m) => m.status === 'Online').length,
+      away: allMembers.filter((m) => m.status === 'Away').length,
+      offline: allMembers.filter((m) => m.status === 'Offline').length,
+    };
+  }, [teamMembers]);
+
+  /**
+   * Filter team by search query (on top of status filter)
+   */
+  const filteredTeam = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return teamMembers;
     }
-  };
+    const query = searchQuery.toLowerCase();
+    return teamMembers.filter((member) => {
+      const fullName = member.profile
+        ? `${member.profile.firstName} ${member.profile.lastName}`.toLowerCase()
+        : '';
+      const designation = member.profile?.designation?.toLowerCase() || '';
+      return fullName.includes(query) || designation.includes(query);
+    });
+  }, [teamMembers, searchQuery]);
 
   /**
-   * Filter team by search query
+   * Render individual team member card with animation
    */
-  const filteredTeam = team.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.designation.toLowerCase().includes(searchQuery.toLowerCase())
+  const renderItem = useCallback(
+    ({ item, index }: { item: TeamMember; index: number }) => (
+      <Animated.View entering={FadeInDown.duration(300).delay(index * 50)}>
+        <TeamMemberCard
+          member={item}
+          onMessage={(member) => {
+            // TODO: Navigate to chat with member
+            console.log('Message:', member.userId);
+          }}
+        />
+      </Animated.View>
+    ),
+    []
   );
 
   /**
-   * Group team by status
+   * Key extractor for FlatList
    */
-  const onlineMembers = filteredTeam.filter((m) => m.status === 'Online');
-  const awayMembers = filteredTeam.filter((m) => m.status === 'Away');
-  const offlineMembers = filteredTeam.filter((m) => m.status === 'Offline');
+  const keyExtractor = useCallback((item: TeamMember) => item.userId, []);
 
   /**
-   * Handle pull-to-refresh
+   * Empty state component
    */
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
-  };
-
-  /**
-   * Render team member card
-   */
-  const renderMember = (member: TeamMember, index: number) => (
-    <Animated.View
-      key={member.id}
-      entering={FadeInDown.duration(300).delay(index * 50)}
-    >
-      <TouchableOpacity style={styles.memberCard}>
-        <View style={styles.memberInfo}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{member.avatarInitials}</Text>
-            </View>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: getStatusColor(member.status) },
-              ]}
-            />
-          </View>
-          <View style={styles.memberDetails}>
-            <Text style={styles.memberName}>{member.name}</Text>
-            <Text style={styles.memberDesignation}>{member.designation}</Text>
-            {member.workMode && (
-              <View style={styles.workModeContainer}>
-                <MapPin size={12} color={colors.silver[400]} />
-                <Text style={styles.workModeText}>{member.workMode}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-        <TouchableOpacity
-          style={styles.messageButton}
-          onPress={() => {
-            // Navigate to chat
-          }}
-        >
-          <MessageSquare size={20} color={colors.blue[600]} />
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Animated.View>
+  const ListEmptyComponent = useMemo(
+    () => (
+      <View style={styles.emptyState}>
+        {isLoading ? (
+          <>
+            <ActivityIndicator size="large" color={colors.blue[600]} />
+            <Text style={styles.emptyStateText}>Loading team...</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.emptyStateTitle}>No team members found</Text>
+            <Text style={styles.emptyStateText}>
+              {searchQuery
+                ? 'Try a different search term'
+                : statusFilter
+                  ? `No team members are currently ${statusFilter.toLowerCase()}`
+                  : 'Your team list is empty'}
+            </Text>
+          </>
+        )}
+      </View>
+    ),
+    [isLoading, searchQuery, statusFilter]
   );
 
   return (
     <View style={styles.container}>
+      {/* Connection Status Indicator */}
+      <View style={styles.connectionBar}>
+        <View
+          style={[
+            styles.connectionDot,
+            { backgroundColor: isConnected ? colors.semantic.success.main : colors.semantic.error.main },
+          ]}
+        />
+        <Text style={styles.connectionText}>
+          {isConnected ? 'Live' : 'Reconnecting...'}
+        </Text>
+      </View>
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Search size={20} color={colors.silver[400]} />
@@ -198,65 +146,38 @@ export default function TeamScreen() {
           placeholderTextColor={colors.silver[400]}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
       </View>
 
-      {/* Status Summary */}
-      <View style={styles.summaryBar}>
-        <View style={styles.summaryItem}>
-          <View style={[styles.summaryDot, { backgroundColor: colors.semantic.success }]} />
-          <Text style={styles.summaryText}>{onlineMembers.length} Online</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <View style={[styles.summaryDot, { backgroundColor: colors.semantic.warning }]} />
-          <Text style={styles.summaryText}>{awayMembers.length} Away</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <View style={[styles.summaryDot, { backgroundColor: colors.silver[400] }]} />
-          <Text style={styles.summaryText}>{offlineMembers.length} Offline</Text>
-        </View>
-      </View>
+      {/* Status Filter */}
+      <TeamStatusFilter
+        selected={statusFilter}
+        onSelect={setStatusFilter}
+        counts={counts}
+      />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+      {/* Team List */}
+      <FlatList
+        data={filteredTeam}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={refresh}
+            colors={[colors.blue[600]]}
+            tintColor={colors.blue[600]}
+          />
         }
-      >
-        {/* Online Members */}
-        {onlineMembers.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Online</Text>
-            {onlineMembers.map((member, idx) => renderMember(member, idx))}
-          </View>
-        )}
-
-        {/* Away Members */}
-        {awayMembers.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Away</Text>
-            {awayMembers.map((member, idx) => renderMember(member, idx + onlineMembers.length))}
-          </View>
-        )}
-
-        {/* Offline Members */}
-        {offlineMembers.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Offline</Text>
-            {offlineMembers.map((member, idx) =>
-              renderMember(member, idx + onlineMembers.length + awayMembers.length)
-            )}
-          </View>
-        )}
-
-        {/* Empty State */}
-        {filteredTeam.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No team members found</Text>
-          </View>
-        )}
-      </ScrollView>
+        ListEmptyComponent={ListEmptyComponent}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+      />
     </View>
   );
 }
@@ -266,12 +187,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.silver[50],
   },
+  connectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[1],
+  },
+  connectionDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing[1],
+  },
+  connectionText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.silver[500],
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    margin: spacing[4],
-    marginBottom: 0,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
     paddingHorizontal: spacing[4],
     borderRadius: borderRadius.xl,
     ...shadows.sm,
@@ -283,124 +222,26 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     color: colors.navy[900],
   },
-  summaryBar: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing[6],
-    paddingVertical: spacing[3],
-    paddingHorizontal: spacing[4],
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-  },
-  summaryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  summaryText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[600],
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
+  listContent: {
     padding: spacing[4],
-    paddingTop: 0,
-  },
-  section: {
-    marginBottom: spacing[4],
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: '600',
-    color: colors.silver[500],
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing[3],
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.xl,
-    padding: spacing[4],
-    marginBottom: spacing[2],
-    ...shadows.sm,
-  },
-  memberInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.silver[200],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.navy[700],
-  },
-  statusDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  memberDetails: {
-    marginLeft: spacing[3],
-    flex: 1,
-  },
-  memberName: {
-    fontSize: typography.fontSize.base,
-    fontWeight: '600',
-    color: colors.navy[900],
-  },
-  memberDesignation: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[500],
-    marginTop: 2,
-  },
-  workModeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[1],
-    marginTop: spacing[1],
-  },
-  workModeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.silver[400],
-  },
-  messageButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.blue[50],
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: spacing[2],
+    flexGrow: 1,
   },
   emptyState: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: spacing[8],
+    justifyContent: 'center',
+    paddingVertical: spacing[12],
+  },
+  emptyStateTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: '600',
+    color: colors.navy[800],
+    marginBottom: spacing[2],
   },
   emptyStateText: {
     fontSize: typography.fontSize.base,
     color: colors.silver[500],
+    textAlign: 'center',
   },
 });
