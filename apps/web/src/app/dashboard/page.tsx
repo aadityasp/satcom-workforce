@@ -36,6 +36,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
+import { useTotalUnreadCount } from '@/store/chat';
 import { api } from '@/lib/api';
 import { ActivityStatusBar, TaskBreakdownCard } from '@/components/presence';
 
@@ -130,6 +131,7 @@ export default function DashboardPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string>('');
 
   const isAdmin = user?.role === 'SuperAdmin' || user?.role === 'HR';
+  const totalUnreadMessages = useTotalUnreadCount();
 
   useEffect(() => {
     if (_hasHydrated && !user) {
@@ -515,6 +517,25 @@ export default function DashboardPage() {
                     <p className="font-medium text-navy-900">Team Activity</p>
                     <p className="text-sm text-silver-500">View activities</p>
                   </button>
+                  <button onClick={() => router.push('/reports')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                      <BarChart3 size={20} className="text-indigo-600" />
+                    </div>
+                    <p className="font-medium text-navy-900">Reports</p>
+                    <p className="text-sm text-silver-500">View dashboards</p>
+                  </button>
+                  <button onClick={() => router.push('/chat')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group relative">
+                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
+                      <MessageSquare size={20} className="text-orange-600" />
+                    </div>
+                    <p className="font-medium text-navy-900">Messages</p>
+                    <p className="text-sm text-silver-500">{totalUnreadMessages > 0 ? `${totalUnreadMessages} unread` : 'Chat with team'}</p>
+                    {totalUnreadMessages > 0 && (
+                      <span className="absolute top-2 right-2 bg-error text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {totalUnreadMessages > 9 ? '9+' : totalUnreadMessages}
+                      </span>
+                    )}
+                  </button>
                   {user.role === 'SuperAdmin' && (
                     <button onClick={() => router.push('/admin/settings')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
@@ -841,12 +862,26 @@ export default function DashboardPage() {
                   <p className="font-medium text-navy-900">Team</p>
                   <p className="text-sm text-silver-500">View colleagues</p>
                 </button>
-                <button onClick={() => router.push('/chat')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
+                {user.role === 'Manager' && (
+                  <button onClick={() => router.push('/reports')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-indigo-200 transition-colors">
+                      <BarChart3 size={20} className="text-indigo-600" />
+                    </div>
+                    <p className="font-medium text-navy-900">Reports</p>
+                    <p className="text-sm text-silver-500">Team dashboard</p>
+                  </button>
+                )}
+                <button onClick={() => router.push('/chat')} className="bg-white rounded-xl p-4 border border-silver-200 hover:border-blue-300 hover:shadow-md transition-all text-left group relative">
                   <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
                     <MessageSquare size={20} className="text-orange-600" />
                   </div>
                   <p className="font-medium text-navy-900">Messages</p>
-                  <p className="text-sm text-silver-500">Chat with team</p>
+                  <p className="text-sm text-silver-500">{totalUnreadMessages > 0 ? `${totalUnreadMessages} unread` : 'Chat with team'}</p>
+                  {totalUnreadMessages > 0 && (
+                    <span className="absolute top-2 right-2 bg-error text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {totalUnreadMessages > 9 ? '9+' : totalUnreadMessages}
+                    </span>
+                  )}
                 </button>
               </motion.div>
 

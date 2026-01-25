@@ -54,3 +54,12 @@ export type {
   MessageStatus,
   MessageRecipientStatus,
 } from '@/store/chat';
+
+export { useManagerDashboard, useHRDashboard } from './useReports';
+export type {
+  AttendanceSummary,
+  TimesheetSummary,
+  TeamMemberStatus,
+  ManagerDashboard,
+  HRDashboard,
+} from './useReports';
