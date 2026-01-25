@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-25 (Phase 8 plan 4 complete)
+**Updated:** 2026-01-25 (Phase 8 plan 5 complete)
 
 ## Project Reference
 
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: ████████░░ 84%
+Progress: █████████░ 87%
 ```
 
 | Phase | Name | Status | Plans |
@@ -25,12 +25,12 @@ Progress: ████████░░ 84%
 | 5 | Presence & Activity | Done | 4/4 |
 | 6 | Chat | In Progress | 3/4 |
 | 7 | Reports & Dashboards | Done | 3/3 |
-| 8 | Mobile App | In Progress | 4/6 |
+| 8 | Mobile App | In Progress | 5/6 |
 | 9 | Admin & Documentation | Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 08-05` to continue Mobile App phase
+**Run:** `/gsd:execute-plan 08-06` to continue Mobile App phase
 
 ## Accumulated Decisions
 
@@ -82,6 +82,9 @@ Progress: ████████░░ 84%
 | 08-04 | AppState listener for foreground reconnection | Reconnect when user returns to app |
 | 08-04 | NetInfo listener for network restore | Reconnect when device regains connectivity |
 | 08-04 | Keep socket alive on unmount | App-level connection, not per-screen |
+| 08-05 | Mirror web chat store patterns | Consistent API and behavior with web implementation |
+| 08-05 | Mobile reconnection via AppState and NetInfo | Handle app backgrounding and network connectivity changes |
+| 08-05 | Inverted FlatList for messages | Standard chat pattern - newest at bottom |
 
 ## Session History
 
@@ -115,11 +118,12 @@ Progress: ████████░░ 84%
 | 2026-01-25 | Phase 8 plan 2 executed | Mobile attendance with GPS capture, hooks, UI components |
 | 2026-01-25 | Phase 8 plan 3 executed | Mobile timesheet entry with project/task selection |
 | 2026-01-25 | Phase 8 plan 4 executed | Mobile team presence with Socket.IO, real-time updates |
+| 2026-01-25 | Phase 8 plan 5 executed | Mobile chat with real-time messaging, typing indicators |
 
 ## Session Continuity
 
-Last session: 2026-01-25T15:06:42Z
-Stopped at: Completed 08-04-PLAN.md
+Last session: 2026-01-25T09:20:00Z
+Stopped at: Completed 08-05-PLAN.md
 Resume file: None
 
 ## Configuration
