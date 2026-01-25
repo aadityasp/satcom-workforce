@@ -271,6 +271,32 @@ export const offlineQueue = new OfflineQueue();
  * }
  * ```
  */
+/**
+ * Simple boolean hook for checking online status
+ *
+ * Returns true when connected and internet is reachable.
+ * More convenient than useNetworkStatus when you only need a boolean.
+ *
+ * @returns Boolean indicating if device is online
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const isOnline = useIsOnline();
+ *
+ *   if (!isOnline) {
+ *     return <Text>You are offline</Text>;
+ *   }
+ *
+ *   return <Text>Connected!</Text>;
+ * }
+ * ```
+ */
+export function useIsOnline(): boolean {
+  const { isConnected, isInternetReachable } = useNetworkStatus();
+  return isConnected && isInternetReachable !== false;
+}
+
 export function useOfflineQueue() {
   const [count, setCount] = useState(0);
 
