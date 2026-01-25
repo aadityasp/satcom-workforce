@@ -24,13 +24,13 @@ Progress: ███████░░░ 65%
 | 4 | Location & Geofence | ✓ Complete | 4/4 |
 | 5 | Presence & Activity | ✓ Complete | 4/4 |
 | 6 | Chat | ◐ In Progress | 3/4 |
-| 7 | Reports & Dashboards | ◐ In Progress | 1/? |
+| 7 | Reports & Dashboards | ◐ In Progress | 2/? |
 | 8 | Mobile App | ○ Pending | 0/0 |
 | 9 | Admin & Documentation | ○ Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 07-02`
+**Run:** `/gsd:execute-plan 07-03`
 
 ## Accumulated Decisions
 
@@ -60,6 +60,9 @@ Progress: ███████░░░ 65%
 | 06-03 | Auto-mark delivered when receiving messages | Automatic delivery confirmation on receipt |
 | 07-01 | 9:15 AM as late threshold for dashboard | Standard grace period, configurable via work policy later |
 | 07-01 | Last 7 days rolling window for weekly metrics | Simple approach, no week boundary complexities |
+| 07-02 | Recharts 3.x with ResponsiveContainer wrapper | SSR safety for Next.js App Router |
+| 07-02 | jsPDF 4.x with jspdf-autotable 5.x for A4 portrait | Table-based PDF reports |
+| 07-02 | NeedsAttention section hides when counts are zero | Clean UI when no issues |
 
 ## Session History
 
@@ -86,6 +89,7 @@ Progress: ███████░░░ 65%
 | 2026-01-24 | Phase 6 plan 2 executed | ChatGateway with auto-join, send/deliver/read events complete |
 | 2026-01-24 | Phase 6 plan 3 executed | Chat store with Socket.IO, useChat hook with auto-connect |
 | 2026-01-25 | Phase 7 plan 1 executed | ReportsService and ReportsController with dashboard aggregation |
+| 2026-01-25 | Phase 7 plan 2 executed | Recharts charts, dashboard widgets, PDF export utilities |
 
 ## Configuration
 
