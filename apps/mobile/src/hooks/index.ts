@@ -9,3 +9,4 @@ export * from './useAttendance';
 export * from './useProjects';
 export * from './useTimesheets';
 export * from './usePresence';
+export * from './useChat';
