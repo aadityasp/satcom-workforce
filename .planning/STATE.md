@@ -74,6 +74,10 @@ Progress: ████████░░ 84%
 | 08-02 | Alert.alert for location explanation | User-friendly permission request |
 | 08-02 | Work mode radio selection in modal | Clear choice UI for check-in |
 | 08-02 | Summary alert on checkout | Show work/break/overtime stats |
+| 08-03 | Hours/minutes to start/end conversion for API | API expects start/end times; 9AM base |
+| 08-03 | Modal-based pickers for mobile | Minimize external dependencies |
+| 08-03 | Tab toggle for entries/add views | Cleaner UX than FAB |
+| 08-03 | 8-hour target for remaining calculation | Standard workday |
 | 08-04 | 10 reconnection attempts with 10s max delay | Mobile networks less reliable, need more aggressive retry |
 | 08-04 | AppState listener for foreground reconnection | Reconnect when user returns to app |
 | 08-04 | NetInfo listener for network restore | Reconnect when device regains connectivity |
@@ -109,6 +113,7 @@ Progress: ████████░░ 84%
 | 2026-01-25 | Phase 7 verified | Reports & Dashboards complete - Manager/HR dashboards working |
 | 2026-01-25 | Phase 8 plan 1 executed | Mobile foundation with offline support, location, API client |
 | 2026-01-25 | Phase 8 plan 2 executed | Mobile attendance with GPS capture, hooks, UI components |
+| 2026-01-25 | Phase 8 plan 3 executed | Mobile timesheet entry with project/task selection |
 | 2026-01-25 | Phase 8 plan 4 executed | Mobile team presence with Socket.IO, real-time updates |
 
 ## Session Continuity
