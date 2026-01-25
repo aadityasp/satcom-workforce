@@ -228,11 +228,13 @@ Plans:
 
 **Plans:** 4 plans
 
+**Status:** Complete (2026-01-24)
+
 Plans:
-- [ ] 06-01-PLAN.md — Schema extension with MessageStatus, enhanced API with edit/delete/search
-- [ ] 06-02-PLAN.md — Enhanced ChatGateway with send/deliver/read events
-- [ ] 06-03-PLAN.md — Zustand chat store and useChat hook
-- [ ] 06-04-PLAN.md — Chat UI components and page
+- [x] 06-01-PLAN.md — Schema extension with MessageStatus, enhanced API with edit/delete/search
+- [x] 06-02-PLAN.md — Enhanced ChatGateway with send/deliver/read events
+- [x] 06-03-PLAN.md — Zustand chat store and useChat hook
+- [x] 06-04-PLAN.md — Chat UI components and page
 
 ---
 
@@ -258,7 +260,13 @@ Plans:
 
 **Dependencies:** Phase 2, 3, 4, 5 (all data sources)
 
-**Estimated Plans:** 4-5
+**Plans:** 4 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Reports API service with Manager and HR dashboard endpoints
+- [ ] 07-02-PLAN.md — Install Recharts/jsPDF, create chart components and PDF utilities
+- [ ] 07-03-PLAN.md — Manager and HR dashboard pages with role routing
+- [ ] 07-04-PLAN.md — Dashboard navigation integration and verification
 
 ---
 
