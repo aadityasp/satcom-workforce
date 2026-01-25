@@ -31,6 +31,7 @@ import {
 } from 'lucide-react-native';
 import { useAuthStore } from '../../src/store/auth';
 import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
+import { OfflineIndicator } from '../../src/components/common/OfflineIndicator';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -150,6 +151,7 @@ export default function ProfileScreen() {
         <View style={styles.roleBadge}>
           <Text style={styles.roleText}>{user?.role}</Text>
         </View>
+        <OfflineIndicator showWhenOnline />
       </Animated.View>
 
       {/* Personal Info Section */}
@@ -240,7 +242,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.menuCard}>
           <MenuItem
-            icon={<LogOut size={20} color={colors.semantic.error} />}
+            icon={<LogOut size={20} color={colors.semantic.error.main} />}
             label="Logout"
             onPress={handleLogout}
             showChevron={false}
@@ -352,14 +354,14 @@ const styles = StyleSheet.create({
     marginRight: spacing[3],
   },
   menuIconDanger: {
-    backgroundColor: colors.semantic.error + '15',
+    backgroundColor: colors.semantic.error.light,
   },
   menuLabel: {
     fontSize: typography.fontSize.base,
     color: colors.navy[900],
   },
   menuLabelDanger: {
-    color: colors.semantic.error,
+    color: colors.semantic.error.main,
   },
   menuItemRight: {
     flexDirection: 'row',
