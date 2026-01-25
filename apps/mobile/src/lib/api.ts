@@ -23,8 +23,8 @@ class ApiClient {
   /**
    * Get headers with authorization token
    */
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
@@ -107,7 +107,7 @@ class ApiClient {
    */
   async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
     const token = useAuthStore.getState().accessToken;
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;

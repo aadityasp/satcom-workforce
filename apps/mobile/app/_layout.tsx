@@ -3,27 +3,51 @@
  *
  * Sets up global providers, fonts, and splash screen handling.
  * Entry point for the Expo Router navigation.
+ *
+ * Configures React Query with AsyncStorage persistence for offline-first support.
  */
 
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '../src/store/auth';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-// Create React Query client
+// Create React Query client with offline-first defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
+      // Keep cached data for 24 hours
+      gcTime: 1000 * 60 * 60 * 24,
+      // Consider data stale after 5 minutes
+      staleTime: 1000 * 60 * 5,
+      // Offline-first: use cache immediately, fetch in background
+      networkMode: 'offlineFirst',
+      // Prevent duplicate calls when app returns to foreground
+      refetchOnWindowFocus: false,
+      // Retry failed requests twice
+      retry: 2,
+    },
+    mutations: {
+      // Offline-first for mutations too
+      networkMode: 'offlineFirst',
       retry: 2,
     },
   },
+});
+
+// Create AsyncStorage persister for React Query cache
+const asyncStoragePersister = createAsyncStoragePersister({
+  storage: AsyncStorage,
+  key: 'satcom-mobile-cache',
 });
 
 /**
@@ -48,7 +72,10 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister: asyncStoragePersister }}
+      >
         <StatusBar style="auto" />
         <Stack
           screenOptions={{
@@ -60,7 +87,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }
