@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** Satcom Workforce
-**Updated:** 2026-01-25 (Phase 8 plan 2 complete)
+**Updated:** 2026-01-25 (Phase 8 plan 4 complete)
 
 ## Project Reference
 
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Status
 
 ```
-Progress: ████████░░ 80%
+Progress: ████████░░ 84%
 ```
 
 | Phase | Name | Status | Plans |
@@ -25,12 +25,12 @@ Progress: ████████░░ 80%
 | 5 | Presence & Activity | Done | 4/4 |
 | 6 | Chat | In Progress | 3/4 |
 | 7 | Reports & Dashboards | Done | 3/3 |
-| 8 | Mobile App | In Progress | 2/4 |
+| 8 | Mobile App | In Progress | 4/6 |
 | 9 | Admin & Documentation | Pending | 0/0 |
 
 ## Next Action
 
-**Run:** `/gsd:execute-plan 08-03` to continue Mobile App phase
+**Run:** `/gsd:execute-plan 08-05` to continue Mobile App phase
 
 ## Accumulated Decisions
 
@@ -74,6 +74,10 @@ Progress: ████████░░ 80%
 | 08-02 | Alert.alert for location explanation | User-friendly permission request |
 | 08-02 | Work mode radio selection in modal | Clear choice UI for check-in |
 | 08-02 | Summary alert on checkout | Show work/break/overtime stats |
+| 08-04 | 10 reconnection attempts with 10s max delay | Mobile networks less reliable, need more aggressive retry |
+| 08-04 | AppState listener for foreground reconnection | Reconnect when user returns to app |
+| 08-04 | NetInfo listener for network restore | Reconnect when device regains connectivity |
+| 08-04 | Keep socket alive on unmount | App-level connection, not per-screen |
 
 ## Session History
 
@@ -105,11 +109,12 @@ Progress: ████████░░ 80%
 | 2026-01-25 | Phase 7 verified | Reports & Dashboards complete - Manager/HR dashboards working |
 | 2026-01-25 | Phase 8 plan 1 executed | Mobile foundation with offline support, location, API client |
 | 2026-01-25 | Phase 8 plan 2 executed | Mobile attendance with GPS capture, hooks, UI components |
+| 2026-01-25 | Phase 8 plan 4 executed | Mobile team presence with Socket.IO, real-time updates |
 
 ## Session Continuity
 
-Last session: 2026-01-25T15:05:45Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-01-25T15:06:42Z
+Stopped at: Completed 08-04-PLAN.md
 Resume file: None
 
 ## Configuration
