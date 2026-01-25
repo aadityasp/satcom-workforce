@@ -17,6 +17,7 @@ import {
   Alert,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import {
   FileText,
   Calendar,
@@ -25,15 +26,18 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { useAuthStore } from '../../src/store/auth';
+import { useTotalUnreadCount } from '../../src/store/chat';
 import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
 import { useAttendance, useLocation } from '../../src/hooks';
 import type { WorkMode, BreakType, CheckOutSummary } from '../../src/hooks/useAttendance';
 import { AttendanceCard, CheckInModal } from '../../src/components/attendance';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const unreadCount = useTotalUnreadCount();
 
   // Real attendance data from API
   const {
@@ -207,13 +211,13 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chat')}>
           <View style={[styles.actionIcon, { backgroundColor: '#FED7AA' }]}>
             <MessageSquare size={20} color="#EA580C" />
           </View>
           <Text style={styles.actionTitle}>Messages</Text>
-          <Text style={[styles.actionSubtitle, { color: colors.semantic.error.main }]}>
-            5 unread
+          <Text style={[styles.actionSubtitle, { color: unreadCount > 0 ? colors.semantic.error.main : colors.silver[500] }]}>
+            {unreadCount > 0 ? `${unreadCount} unread` : 'No unread'}
           </Text>
         </TouchableOpacity>
       </Animated.View>
