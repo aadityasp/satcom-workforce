@@ -262,11 +262,13 @@ Plans:
 
 **Plans:** 4 plans
 
+**Status:** Complete (2026-01-25)
+
 Plans:
-- [ ] 07-01-PLAN.md — Reports API service with Manager and HR dashboard endpoints
-- [ ] 07-02-PLAN.md — Install Recharts/jsPDF, create chart components and PDF utilities
-- [ ] 07-03-PLAN.md — Manager and HR dashboard pages with role routing
-- [ ] 07-04-PLAN.md — Dashboard navigation integration and verification
+- [x] 07-01-PLAN.md — Reports API service with Manager and HR dashboard endpoints
+- [x] 07-02-PLAN.md — Install Recharts/jsPDF, create chart components and PDF utilities
+- [x] 07-03-PLAN.md — Manager and HR dashboard pages with role routing
+- [x] 07-04-PLAN.md — Dashboard navigation integration and verification
 
 ---
 
@@ -294,7 +296,15 @@ Plans:
 
 **Dependencies:** Phases 1-6 (API must be ready)
 
-**Estimated Plans:** 5-6
+**Plans:** 6 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Foundation: dependencies, React Query persistence, API client, location utilities
+- [ ] 08-02-PLAN.md — Attendance: useAttendance hook, location permission flow, check-in UI
+- [ ] 08-03-PLAN.md — Timesheets: useTimesheets hook, entry form, history list
+- [ ] 08-04-PLAN.md — Team Presence: presence store with mobile reconnect, team list UI
+- [ ] 08-05-PLAN.md — Chat: chat store with mobile reconnect, conversation list, message threads
+- [ ] 08-06-PLAN.md — Offline support, network banner, profile screen, integration verification
 
 ---
 
@@ -362,4 +372,4 @@ Sequential dependencies:
 
 ---
 *Created: 2026-01-24*
-*Last updated: 2026-01-24*
+*Last updated: 2026-01-25*
