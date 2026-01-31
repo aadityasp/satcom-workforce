@@ -1,0 +1,212 @@
+# ============================================
+# Satcom Workforce - Production Docker Compose
+# ============================================
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: satcom-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-satcom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-satcom}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-satcom} -d ${POSTGRES_DB:-satcom}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # Redis Cache
+  # ---------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: satcom-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # MinIO Object Storage
+  # ---------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: satcom-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio123}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # API Server
+  # ---------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: satcom-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_URL: postgresql://${POSTGRES_USER:-satcom}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-satcom}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minio}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-satcom-uploads}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM:-noreply@satcom-workforce.com}
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # Web Application
+  # ---------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    container_name: satcom-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3003/api/v1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # Nginx Reverse Proxy
+  # ---------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: satcom-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - api
+      - web
+    networks:
+      - satcom-network
+
+  # ---------------------------------------------------------
+  # Database Backup (runs daily)
+  # ---------------------------------------------------------
+  backup:
+    image: postgres:16-alpine
+    container_name: satcom-backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-satcom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-satcom}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    command: >
+      sh -c "
+        echo '0 2 * * * /backup.sh' | crontab - &&
+        crond -f
+      "
+    depends_on:
+      - postgres
+    networks:
+      - satcom-network
+
+# ---------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# ---------------------------------------------------------
+# Networks
+# ---------------------------------------------------------
+networks:
+  satcom-network:
+    driver: bridge

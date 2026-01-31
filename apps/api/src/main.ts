@@ -56,6 +56,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
+  // Health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0',
+    });
+  });
+
   // Start server
   const port = configService.get<number>('PORT', 3001);
   await app.listen(port);

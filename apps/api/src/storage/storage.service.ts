@@ -4,6 +4,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
+import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -33,6 +34,29 @@ export class StorageService implements OnModuleInit {
     } catch (error) {
       console.error('Failed to initialize MinIO bucket:', error);
     }
+  }
+
+  /**
+   * Upload a file buffer directly to storage
+   */
+  async uploadFile(
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    folder: string,
+  ): Promise<{ url: string; objectKey: string; fileName: string; fileSize: number }> {
+    const extension = file.originalname.split('.').pop();
+    const objectKey = `${folder}/${uuidv4()}.${extension}`;
+
+    const stream = Readable.from(file.buffer);
+    await this.minioClient.putObject(
+      this.bucket,
+      objectKey,
+      stream,
+      file.size,
+      { 'Content-Type': file.mimetype },
+    );
+
+    const url = await this.getDownloadUrl(objectKey);
+    return { url, objectKey, fileName: file.originalname, fileSize: file.size };
   }
 
   /**
