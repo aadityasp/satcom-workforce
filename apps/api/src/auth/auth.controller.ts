@@ -15,7 +15,7 @@ import {
   Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -27,6 +27,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 
 @ApiTags('Authentication')
+@SkipThrottle() // Skip rate limiting for auth during development
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

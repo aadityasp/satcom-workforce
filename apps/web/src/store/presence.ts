@@ -68,6 +68,8 @@ interface PresenceState {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Socket.IO needs the base URL without /api/v1 path
+const SOCKET_URL = API_URL.replace(/\/api\/v\d+$/, '');
 
 export const usePresenceStore = create<PresenceState>((set, get) => ({
   // Initial state
@@ -88,7 +90,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
     // Disconnect existing socket if any
     existingSocket?.disconnect();
 
-    const socket = io(`${API_URL}/presence`, {
+    const socket = io(`${SOCKET_URL}/presence`, {
       auth: { token },
       autoConnect: true,
       reconnection: true,

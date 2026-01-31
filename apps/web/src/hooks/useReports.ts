@@ -19,7 +19,7 @@ export interface AttendanceSummary {
   onLeave: number;
 }
 
-export interface TimesheetSummary {
+export interface ProjectTimesheetSummary {
   projectId: string;
   projectName: string;
   totalMinutes: number;
@@ -46,7 +46,7 @@ export interface ManagerDashboard {
     onLeave: number;
   };
   weeklyAttendance: AttendanceSummary[];
-  weeklyTimesheet: TimesheetSummary[];
+  weeklyTimesheet: ProjectTimesheetSummary[];
   teamStatus: TeamMemberStatus[];
   openAnomalies: number;
 }

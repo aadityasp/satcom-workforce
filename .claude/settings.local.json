@@ -43,7 +43,12 @@
       "Bash(git remote:*)",
       "Bash(git push:*)",
       "Bash(gh auth status:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(git config:*)",
+      "Task",
+      "Edit",
+      "Write",
+      "Bash"
     ]
   }
 }

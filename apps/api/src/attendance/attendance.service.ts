@@ -53,12 +53,14 @@ export class AttendanceService {
     });
 
     if (existingDay) {
-      const hasCheckIn = existingDay.events.some(
+      // Only block if currently checked in (not checked out)
+      const hasActiveCheckIn = existingDay.events.some(
         (e) => e.type === AttendanceEventType.CheckIn && !e.isOverride,
       );
-      if (hasCheckIn && !existingDay.isComplete) {
+      if (hasActiveCheckIn && !existingDay.isComplete) {
         throw new BadRequestException('Already checked in today');
       }
+      // If day was complete (checked out), allow re-checking in
     }
 
     // Validate geofence if required for office mode
@@ -72,7 +74,7 @@ export class AttendanceService {
       );
     }
 
-    // Create or update attendance day
+    // Create or update attendance day - reset isComplete if re-checking in
     const attendanceDay = await this.prisma.attendanceDay.upsert({
       where: {
         userId_date: {
@@ -84,7 +86,9 @@ export class AttendanceService {
         userId,
         date: today,
       },
-      update: {},
+      update: {
+        isComplete: false, // Reset to allow new session
+      },
     });
 
     // Create check-in event
@@ -144,18 +148,23 @@ export class AttendanceService {
       throw new BadRequestException('Not checked in today');
     }
 
-    const checkInEvent = attendanceDay.events.find(
-      (e) => e.type === AttendanceEventType.CheckIn,
-    );
+    // Find the most recent check-in event (to support multiple check-ins per day)
+    const checkInEvents = attendanceDay.events
+      .filter((e) => e.type === AttendanceEventType.CheckIn)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    const checkInEvent = checkInEvents[0];
     if (!checkInEvent) {
       throw new BadRequestException('No check-in found for today');
     }
 
-    const hasCheckOut = attendanceDay.events.some(
-      (e) => e.type === AttendanceEventType.CheckOut,
+    // Check if there's a checkout AFTER the most recent check-in
+    const hasCheckOutAfterCheckIn = attendanceDay.events.some(
+      (e) => e.type === AttendanceEventType.CheckOut &&
+             e.timestamp.getTime() > checkInEvent.timestamp.getTime(),
     );
-    if (hasCheckOut) {
-      throw new BadRequestException('Already checked out today');
+    if (hasCheckOutAfterCheckIn) {
+      throw new BadRequestException('Already checked out for this session');
     }
 
     // End any open breaks
@@ -592,13 +601,20 @@ export class AttendanceService {
       };
     }
 
-    // Compute status
-    const checkInEvent = day.events.find(
-      (e) => e.type === AttendanceEventType.CheckIn,
-    );
-    const checkOutEvent = day.events.find(
-      (e) => e.type === AttendanceEventType.CheckOut,
-    );
+    // Compute status based on most recent check-in/check-out pair
+    // Sort events by timestamp descending to find most recent
+    const sortedCheckIns = day.events
+      .filter((e) => e.type === AttendanceEventType.CheckIn)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const checkInEvent = sortedCheckIns[0];
+
+    // Find check-out events that occurred after the most recent check-in
+    const checkOutEvent = checkInEvent
+      ? day.events.find(
+          (e) => e.type === AttendanceEventType.CheckOut &&
+                 e.timestamp.getTime() > checkInEvent.timestamp.getTime()
+        )
+      : null;
     const openBreak = day.breaks.find((b) => !b.endTime);
 
     let status: 'not_checked_in' | 'working' | 'on_break' | 'checked_out';

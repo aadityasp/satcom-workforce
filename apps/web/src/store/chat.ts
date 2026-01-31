@@ -117,6 +117,8 @@ interface ChatState {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Socket URL should be the base URL without /api/v1 path
+const SOCKET_URL = API_URL.replace(/\/api\/v\d+$/, '');
 
 export const useChatStore = create<ChatState>((set, get) => ({
   // Initial state
@@ -141,7 +143,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Disconnect existing socket if any
     existingSocket?.disconnect();
 
-    const socket = io(`${API_URL}/chat`, {
+    const socket = io(`${SOCKET_URL}/chat`, {
       auth: { token },
       autoConnect: true,
       reconnection: true,

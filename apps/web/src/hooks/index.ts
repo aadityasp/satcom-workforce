@@ -58,7 +58,7 @@ export type {
 export { useManagerDashboard, useHRDashboard } from './useReports';
 export type {
   AttendanceSummary,
-  TimesheetSummary,
+  ProjectTimesheetSummary,
   TeamMemberStatus,
   ManagerDashboard,
   HRDashboard,

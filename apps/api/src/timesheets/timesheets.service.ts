@@ -8,20 +8,40 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { differenceInMinutes, startOfDay, isSameDay } from 'date-fns';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 import { CreateTimesheetDto } from './dto/create-timesheet.dto';
 import { UpdateTimesheetDto } from './dto/update-timesheet.dto';
 
 @Injectable()
 export class TimesheetsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+  ) {}
 
   /**
    * Create a new timesheet entry
    */
   async create(userId: string, createDto: CreateTimesheetDto) {
+    // Calculate minutes from start/end times
+    const startTime = new Date(createDto.startTime);
+    const endTime = new Date(createDto.endTime);
+    const minutes = differenceInMinutes(endTime, startTime);
+
+    if (minutes <= 0) {
+      throw new BadRequestException('End time must be after start time');
+    }
+
+    // Validate taskId is required (per database schema)
+    if (!createDto.taskId) {
+      throw new BadRequestException('Task ID is required');
+    }
+
     // Validate task belongs to project
     const task = await this.prisma.task.findUnique({
       where: { id: createDto.taskId },
@@ -41,26 +61,70 @@ export class TimesheetsService {
     });
 
     const existingMinutes = existingEntries.reduce((sum, e) => sum + e.minutes, 0);
-    if (existingMinutes + createDto.minutes > 1440) {
+    if (existingMinutes + minutes > 1440) {
       throw new BadRequestException('Total time exceeds 24 hours for this day');
     }
 
+    // Create the entry
     const entry = await this.prisma.timesheetEntry.create({
       data: {
         userId,
         date: new Date(createDto.date),
         projectId: createDto.projectId,
         taskId: createDto.taskId,
-        minutes: createDto.minutes,
+        minutes,
         notes: createDto.notes,
       },
       include: {
         project: true,
         task: true,
+        attachments: true,
       },
     });
 
+    // Link attachments if provided
+    if (createDto.attachmentKeys && createDto.attachmentKeys.length > 0) {
+      await this.prisma.timesheetAttachment.createMany({
+        data: createDto.attachmentKeys.map((objectKey) => ({
+          timesheetEntryId: entry.id,
+          fileName: objectKey.split('/').pop() || objectKey,
+          fileUrl: objectKey,
+          fileType: this.getFileTypeFromKey(objectKey),
+          fileSize: 0, // Size unknown from key, can be fetched later if needed
+        })),
+      });
+
+      // Fetch entry with attachments
+      return this.prisma.timesheetEntry.findUnique({
+        where: { id: entry.id },
+        include: {
+          project: true,
+          task: true,
+          attachments: true,
+        },
+      });
+    }
+
     return entry;
+  }
+
+  /**
+   * Helper to determine file type from object key
+   */
+  private getFileTypeFromKey(objectKey: string): string {
+    const extension = objectKey.split('.').pop()?.toLowerCase() || '';
+    const typeMap: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+    return typeMap[extension] || 'application/octet-stream';
   }
 
   /**
@@ -123,6 +187,7 @@ export class TimesheetsService {
   async update(id: string, userId: string, updateDto: UpdateTimesheetDto) {
     const entry = await this.prisma.timesheetEntry.findUnique({
       where: { id },
+      include: { attachments: true },
     });
 
     if (!entry) {
@@ -133,8 +198,26 @@ export class TimesheetsService {
       throw new BadRequestException('Cannot update another user\'s entry');
     }
 
+    // Same-day check: can only edit today's entries
+    const today = startOfDay(new Date());
+    if (!isSameDay(entry.date, today)) {
+      throw new BadRequestException('Can only edit today\'s entries');
+    }
+
+    // Calculate minutes if start/end times changed
+    let minutes: number | undefined;
+    if (updateDto.startTime && updateDto.endTime) {
+      const startTime = new Date(updateDto.startTime);
+      const endTime = new Date(updateDto.endTime);
+      minutes = differenceInMinutes(endTime, startTime);
+
+      if (minutes <= 0) {
+        throw new BadRequestException('End time must be after start time');
+      }
+    }
+
     // Validate daily total if minutes changed
-    if (updateDto.minutes) {
+    if (minutes !== undefined) {
       const existingEntries = await this.prisma.timesheetEntry.findMany({
         where: {
           userId,
@@ -144,17 +227,56 @@ export class TimesheetsService {
       });
 
       const existingMinutes = existingEntries.reduce((sum, e) => sum + e.minutes, 0);
-      if (existingMinutes + updateDto.minutes > 1440) {
+      if (existingMinutes + minutes > 1440) {
         throw new BadRequestException('Total time exceeds 24 hours');
       }
     }
 
+    // Handle attachment updates
+    if (updateDto.attachmentKeys !== undefined) {
+      // Get current attachment URLs
+      const currentKeys = entry.attachments.map((a) => a.fileUrl);
+      const newKeys = updateDto.attachmentKeys;
+
+      // Delete removed attachments
+      const keysToRemove = currentKeys.filter((k) => !newKeys.includes(k));
+      if (keysToRemove.length > 0) {
+        await this.prisma.timesheetAttachment.deleteMany({
+          where: {
+            timesheetEntryId: id,
+            fileUrl: { in: keysToRemove },
+          },
+        });
+      }
+
+      // Add new attachments
+      const keysToAdd = newKeys.filter((k) => !currentKeys.includes(k));
+      if (keysToAdd.length > 0) {
+        await this.prisma.timesheetAttachment.createMany({
+          data: keysToAdd.map((objectKey) => ({
+            timesheetEntryId: id,
+            fileName: objectKey.split('/').pop() || objectKey,
+            fileUrl: objectKey,
+            fileType: this.getFileTypeFromKey(objectKey),
+            fileSize: 0,
+          })),
+        });
+      }
+    }
+
+    // Build update data (exclude attachmentKeys which is handled separately)
+    const { attachmentKeys: _, startTime: __, endTime: ___, ...updateData } = updateDto;
+
     return this.prisma.timesheetEntry.update({
       where: { id },
-      data: updateDto,
+      data: {
+        ...updateData,
+        ...(minutes !== undefined ? { minutes } : {}),
+      },
       include: {
         project: true,
         task: true,
+        attachments: true,
       },
     });
   }
@@ -175,8 +297,62 @@ export class TimesheetsService {
       throw new BadRequestException('Cannot delete another user\'s entry');
     }
 
+    // Same-day check: can only delete today's entries
+    const today = startOfDay(new Date());
+    if (!isSameDay(entry.date, today)) {
+      throw new BadRequestException('Can only delete today\'s entries');
+    }
+
+    // Attachments are cascade deleted via Prisma relation
     await this.prisma.timesheetEntry.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  /**
+   * Get single timesheet entry with ownership check
+   */
+  async findOne(id: string, userId: string) {
+    const entry = await this.prisma.timesheetEntry.findUnique({
+      where: { id },
+      include: {
+        project: true,
+        task: true,
+        attachments: true,
+      },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Timesheet entry not found');
+    }
+
+    if (entry.userId !== userId) {
+      throw new ForbiddenException('Cannot access another user\'s entry');
+    }
+
+    return entry;
+  }
+
+  /**
+   * Get presigned download URL for attachment with ownership check
+   */
+  async getAttachmentDownloadUrl(objectKey: string, userId: string): Promise<string> {
+    // Find the attachment and verify ownership
+    const attachment = await this.prisma.timesheetAttachment.findFirst({
+      where: { fileUrl: objectKey },
+      include: {
+        timesheetEntry: true,
+      },
+    });
+
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    if (attachment.timesheetEntry.userId !== userId) {
+      throw new ForbiddenException('Cannot access another user\'s attachment');
+    }
+
+    return this.storageService.getDownloadUrl(objectKey);
   }
 
   /**

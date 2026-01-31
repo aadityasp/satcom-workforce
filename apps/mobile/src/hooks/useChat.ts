@@ -89,11 +89,13 @@ export function useChat(options: UseChatOptions = {}) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
+        const errorBody = await response.text();
+        console.error('[useChat] Threads fetch error:', response.status, errorBody);
+        throw new Error(`Failed: ${response.status}`);
       }
 
-      const { data } = await response.json();
-      setConversations(data);
+      const result = await response.json();
+      setConversations(result.data || []);
     } catch (error) {
       console.error('[useChat] Failed to fetch conversations:', error);
     } finally {

@@ -11,7 +11,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { useChatStore, Conversation, ChatMessage } from '@/store/chat';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003/api/v1';
 
 interface UseChatOptions {
   autoConnect?: boolean;
@@ -46,6 +46,7 @@ export function useChat(options: UseChatOptions = {}) {
     addConversation,
     setMessages,
     prependMessages,
+    updateMessage,
     sendMessage,
     markAsRead,
     startTyping,
@@ -244,10 +245,16 @@ export function useChat(options: UseChatOptions = {}) {
   // Edit message via REST
   const editMessage = useCallback(
     async (messageId: string, content: string): Promise<ChatMessage | null> => {
-      if (!accessToken) return null;
+      console.log('[useChat] editMessage called', { messageId, content, API_URL, hasToken: !!accessToken });
+      if (!accessToken) {
+        console.log('[useChat] No access token');
+        return null;
+      }
 
       try {
-        const response = await fetch(`${API_URL}/chat/messages/${messageId}`, {
+        const url = `${API_URL}/chat/messages/${messageId}`;
+        console.log('[useChat] Fetching:', url);
+        const response = await fetch(url, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -256,19 +263,30 @@ export function useChat(options: UseChatOptions = {}) {
           body: JSON.stringify({ content }),
         });
 
+        console.log('[useChat] Response status:', response.status);
         if (!response.ok) {
           const error = await response.json();
+          console.log('[useChat] Error response:', error);
           throw new Error(error.message || 'Failed to edit message');
         }
 
         const { data } = await response.json();
+        console.log('[useChat] Edit response data:', data);
+        // Update the message in the store
+        if (data && data.threadId) {
+          updateMessage(data.threadId, messageId, {
+            content: data.content,
+            isEdited: true,
+            updatedAt: data.updatedAt,
+          });
+        }
         return data;
       } catch (error) {
         console.error('[useChat] Failed to edit message:', error);
         throw error;
       }
     },
-    [accessToken]
+    [accessToken, updateMessage]
   );
 
   // Delete message via REST
@@ -290,13 +308,20 @@ export function useChat(options: UseChatOptions = {}) {
         }
 
         const { data } = await response.json();
+        // Update the message in the store to show as deleted
+        if (data && data.threadId) {
+          updateMessage(data.threadId, messageId, {
+            deletedAt: data.deletedAt || new Date().toISOString(),
+            content: null,
+          });
+        }
         return data;
       } catch (error) {
         console.error('[useChat] Failed to delete message:', error);
         throw error;
       }
     },
-    [accessToken]
+    [accessToken, updateMessage]
   );
 
   // Fetch conversations on mount

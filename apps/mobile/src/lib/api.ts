@@ -13,7 +13,8 @@ import type { ApiResponse } from '@satcom/shared';
 /**
  * API base URL from environment or default to localhost
  */
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+// Hardcoded for development - use machine IP for simulator access
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.86.167:3003/api/v1';
 
 /**
  * Network error response for offline scenarios

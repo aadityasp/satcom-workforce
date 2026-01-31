@@ -14,7 +14,7 @@ interface MessageThreadProps {
 export function MessageThread({ conversation }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { loadMoreMessages, isLoadingMessages } = useChat({ autoConnect: false });
+  const { loadMoreMessages, isLoadingMessages, editMessage, deleteMessage } = useChat({ autoConnect: false });
 
   const messages = useChatStore((state) => state.messages.get(conversation.id) || []);
   const hasMore = useChatStore((state) => state.hasMoreMessages.get(conversation.id) ?? true);
@@ -73,6 +73,12 @@ export function MessageThread({ conversation }: MessageThreadProps) {
             message={message}
             showAvatar={showAvatar}
             isGrouped={isGrouped}
+            onEdit={async (messageId, content) => {
+              await editMessage(messageId, content);
+            }}
+            onDelete={async (messageId) => {
+              await deleteMessage(messageId);
+            }}
           />
         ))}
       </div>

@@ -29,11 +29,13 @@ export class ReportsController {
     const { id: userId, companyId, role } = req.user;
 
     if (role === UserRole.Manager) {
-      return this.reportsService.getManagerDashboard(userId, companyId);
+      const data = await this.reportsService.getManagerDashboard(userId, companyId);
+      return { success: true, data };
     }
 
     // HR and SuperAdmin get org-wide dashboard
-    return this.reportsService.getHRDashboard(companyId);
+    const data = await this.reportsService.getHRDashboard(companyId);
+    return { success: true, data };
   }
 
   /**
@@ -44,7 +46,8 @@ export class ReportsController {
   @Roles(UserRole.Manager)
   async getManagerDashboard(@Req() req: any) {
     const { id: userId, companyId } = req.user;
-    return this.reportsService.getManagerDashboard(userId, companyId);
+    const data = await this.reportsService.getManagerDashboard(userId, companyId);
+    return { success: true, data };
   }
 
   /**
@@ -55,6 +58,7 @@ export class ReportsController {
   @Roles(UserRole.HR, UserRole.SuperAdmin)
   async getHRDashboard(@Req() req: any) {
     const { companyId } = req.user;
-    return this.reportsService.getHRDashboard(companyId);
+    const data = await this.reportsService.getHRDashboard(companyId);
+    return { success: true, data };
   }
 }

@@ -27,8 +27,8 @@ interface UsePresenceReturn {
   refresh: () => Promise<void>;
 }
 
-interface PresenceTeamResponse {
-  team: TeamMember[];
+interface PresenceListResponse {
+  users: TeamMember[];
 }
 
 /**
@@ -54,14 +54,14 @@ export function usePresence(): UsePresenceReturn {
   const filteredMembers = useFilteredTeamMembers();
 
   /**
-   * Fetch team data from API
+   * Fetch team data from API - uses /presence/list endpoint
    */
   const fetchTeam = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<PresenceTeamResponse>('/presence/team');
+      const response = await apiClient.get<PresenceListResponse>('/presence/list');
       if (response.success && response.data) {
-        setTeamMembers(response.data.team);
+        setTeamMembers(response.data.users || []);
       }
     } catch (error) {
       console.error('[usePresence] Failed to fetch team:', error);

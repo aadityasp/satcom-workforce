@@ -123,7 +123,8 @@ interface ChatState {
   setLoadingMessages: (loading: boolean) => void;
 }
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+// Use machine IP for simulator access - localhost doesn't work from iOS simulator
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.86.167:3003/api/v1';
 // Socket.IO needs the base URL without /api/v1 path
 const SOCKET_URL = API_URL.replace(/\/api\/v\d+$/, '');
 

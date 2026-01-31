@@ -33,6 +33,7 @@ interface SendMessagePayload {
   content?: string;
   attachmentUrl?: string;
   attachmentType?: string;
+  tempId?: string; // Client-side temp ID for optimistic update deduplication
 }
 
 interface DeliveredPayload {
@@ -159,9 +160,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
 
       // Broadcast to all members in the thread room
+      // Include tempId so sender can deduplicate optimistic update
       this.server.to(`thread:${data.threadId}`).emit('chat:message', {
         threadId: data.threadId,
         message,
+        tempId: data.tempId,
       });
 
       this.logger.log(

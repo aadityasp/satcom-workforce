@@ -83,6 +83,20 @@ export class TimesheetsController {
     return { success: true, data: result };
   }
 
+  @Get('attachment/*')
+  @ApiOperation({ summary: 'Get presigned download URL for attachment' })
+  async getAttachmentUrl(@Param('0') objectKey: string, @CurrentUser() user: any) {
+    const url = await this.timesheetsService.getAttachmentDownloadUrl(objectKey, user.id);
+    return { success: true, data: { url } };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get single timesheet entry' })
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const result = await this.timesheetsService.findOne(id, user.id);
+    return { success: true, data: result };
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update timesheet entry' })
   async update(

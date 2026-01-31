@@ -63,7 +63,22 @@ export class ChatService {
       },
     });
 
-    if (existing) return existing;
+    const includeMembers = {
+      members: {
+        include: {
+          user: {
+            include: { profile: true },
+          },
+        },
+      },
+    };
+
+    if (existing) {
+      return this.prisma.chatThread.findUnique({
+        where: { id: existing.id },
+        include: includeMembers,
+      });
+    }
 
     return this.prisma.chatThread.create({
       data: {
@@ -72,7 +87,7 @@ export class ChatService {
           create: [{ userId }, { userId: otherUserId }],
         },
       },
-      include: { members: true },
+      include: includeMembers,
     });
   }
 
@@ -271,7 +286,7 @@ export class ChatService {
     });
   }
 
-  async searchUsers(userId: string, query: string, limit = 20) {
+  async searchUsers(userId: string, query: string, limit?: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { companyId: true },
@@ -279,19 +294,21 @@ export class ChatService {
 
     if (!user) throw new NotFoundException('User not found');
 
+    const takeCount = limit && !isNaN(limit) ? limit : 20;
+
     return this.prisma.user.findMany({
       where: {
         companyId: user.companyId,
         id: { not: userId },
         isActive: true,
         OR: [
-          { email: { contains: query, mode: 'insensitive' } },
-          { profile: { firstName: { contains: query, mode: 'insensitive' } } },
-          { profile: { lastName: { contains: query, mode: 'insensitive' } } },
+          { email: { contains: query, mode: 'insensitive' as const } },
+          { profile: { firstName: { contains: query, mode: 'insensitive' as const } } },
+          { profile: { lastName: { contains: query, mode: 'insensitive' as const } } },
         ],
       },
       include: { profile: true },
-      take: limit,
+      take: takeCount,
     });
   }
 }

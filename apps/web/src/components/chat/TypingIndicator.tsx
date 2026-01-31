@@ -17,7 +17,7 @@ export function TypingIndicator({ threadId, members }: TypingIndicatorProps) {
   const typingNames = typingUserIds
     .map((userId) => {
       const member = members.find((m) => m.userId === userId);
-      return member?.user.profile?.firstName || 'Someone';
+      return member?.user?.profile?.firstName || 'Someone';
     })
     .slice(0, 3);
 

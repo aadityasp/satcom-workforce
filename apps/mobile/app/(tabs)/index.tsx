@@ -28,9 +28,11 @@ import {
 import { useAuthStore } from '../../src/store/auth';
 import { useTotalUnreadCount } from '../../src/store/chat';
 import { colors, typography, borderRadius, shadows, spacing } from '../../src/theme';
-import { useAttendance, useLocation } from '../../src/hooks';
+import { useAttendance, useLocation, useRecentActivity } from '../../src/hooks';
 import type { WorkMode, BreakType, CheckOutSummary } from '../../src/hooks/useAttendance';
+import type { ActivityItem } from '../../src/hooks/useRecentActivity';
 import { AttendanceCard, CheckInModal } from '../../src/components/attendance';
+import { format, isToday, isYesterday } from 'date-fns';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -55,6 +57,43 @@ export default function HomeScreen() {
 
   // Location hook for GPS capture
   const { getCurrentPosition } = useLocation();
+
+  // Recent activity data
+  const {
+    activities,
+    isLoading: isLoadingActivity,
+    refresh: refreshActivity,
+  } = useRecentActivity();
+
+  /**
+   * Format activity timestamp for display
+   */
+  const formatActivityTime = (date: Date): string => {
+    if (isToday(date)) {
+      return `Today, ${format(date, 'h:mm a')}`;
+    }
+    if (isYesterday(date)) {
+      return `Yesterday, ${format(date, 'h:mm a')}`;
+    }
+    return format(date, 'MMM d, h:mm a');
+  };
+
+  /**
+   * Get color for activity type
+   */
+  const getActivityColor = (color: ActivityItem['color']): string => {
+    switch (color) {
+      case 'success':
+        return colors.semantic.success.main;
+      case 'warning':
+        return colors.semantic.warning.main;
+      case 'error':
+        return colors.semantic.error.main;
+      case 'info':
+      default:
+        return colors.blue[600];
+    }
+  };
 
   // Update time every minute
   useEffect(() => {
@@ -85,7 +124,7 @@ export default function HomeScreen() {
    * Handle pull-to-refresh
    */
   const onRefresh = async () => {
-    await refresh();
+    await Promise.all([refresh(), refreshActivity()]);
   };
 
   /**
@@ -185,12 +224,12 @@ export default function HomeScreen() {
         entering={FadeInDown.duration(300).delay(300)}
         style={styles.actionsGrid}
       >
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/timesheet')}>
           <View style={[styles.actionIcon, { backgroundColor: colors.blue[100] }]}>
             <FileText size={20} color={colors.blue[600]} />
           </View>
           <Text style={styles.actionTitle}>Timesheets</Text>
-          <Text style={styles.actionSubtitle}>3 pending</Text>
+          <Text style={styles.actionSubtitle}>Log time</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionCard}>
@@ -198,16 +237,16 @@ export default function HomeScreen() {
             <Calendar size={20} color="#9333EA" />
           </View>
           <Text style={styles.actionTitle}>Leave</Text>
-          <Text style={styles.actionSubtitle}>2 pending</Text>
+          <Text style={[styles.actionSubtitle, { color: colors.silver[500] }]}>Request</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/team')}>
           <View style={[styles.actionIcon, { backgroundColor: '#DCFCE7' }]}>
             <Users size={20} color="#16A34A" />
           </View>
           <Text style={styles.actionTitle}>Team</Text>
           <Text style={[styles.actionSubtitle, { color: '#16A34A' }]}>
-            12 online
+            View status
           </Text>
         </TouchableOpacity>
 
@@ -236,27 +275,21 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.activityList}>
-          <View style={styles.activityItem}>
-            <View style={[styles.activityDot, { backgroundColor: colors.semantic.success.main }]} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityItemTitle}>Checked in at Office</Text>
-              <Text style={styles.activityItemTime}>Today, 9:15 AM</Text>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={[styles.activityDot, { backgroundColor: colors.blue[600] }]} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityItemTitle}>Submitted timesheet for Project Alpha</Text>
-              <Text style={styles.activityItemTime}>Yesterday, 5:30 PM</Text>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={[styles.activityDot, { backgroundColor: colors.semantic.warning.main }]} />
-            <View style={styles.activityContent}>
-              <Text style={styles.activityItemTitle}>Late check-in flagged</Text>
-              <Text style={styles.activityItemTime}>Jan 17, 9:45 AM</Text>
-            </View>
-          </View>
+          {isLoadingActivity ? (
+            <Text style={styles.activityItemTime}>Loading...</Text>
+          ) : activities.length === 0 ? (
+            <Text style={styles.activityItemTime}>No recent activity</Text>
+          ) : (
+            activities.map((activity) => (
+              <View key={activity.id} style={styles.activityItem}>
+                <View style={[styles.activityDot, { backgroundColor: getActivityColor(activity.color) }]} />
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityItemTitle}>{activity.title}</Text>
+                  <Text style={styles.activityItemTime}>{formatActivityTime(activity.timestamp)}</Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
       </Animated.View>
     </ScrollView>

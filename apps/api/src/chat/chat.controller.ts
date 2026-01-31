@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -26,6 +27,7 @@ import {
 @ApiTags('Chat')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@SkipThrottle() // Chat needs to be responsive, skip rate limiting
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
@@ -107,9 +109,10 @@ export class ChatController {
   async searchUsers(
     @CurrentUser() user: any,
     @Query('q') query: string,
-    @Query('limit') limit?: number,
+    @Query('limit') limit?: string,
   ) {
-    const data = await this.chatService.searchUsers(user.id, query || '', limit);
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    const data = await this.chatService.searchUsers(user.id, query || '', parsedLimit);
     return { success: true, data };
   }
 }

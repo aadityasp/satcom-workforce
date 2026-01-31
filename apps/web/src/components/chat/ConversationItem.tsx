@@ -19,16 +19,16 @@ export function ConversationItem({ conversation, isActive, onClick }: Conversati
     : null;
 
   const displayName = conversation.name
-    || (otherMember?.user.profile
+    || (otherMember?.user?.profile
       ? `${otherMember.user.profile.firstName} ${otherMember.user.profile.lastName}`
-      : otherMember?.user.email)
+      : otherMember?.user?.email)
     || 'Unknown';
 
-  const initials = otherMember?.user.profile
+  const initials = otherMember?.user?.profile
     ? `${otherMember.user.profile.firstName?.[0] || ''}${otherMember.user.profile.lastName?.[0] || ''}`
     : conversation.name?.[0]?.toUpperCase() || '?';
 
-  const avatarUrl = otherMember?.user.profile?.avatarUrl;
+  const avatarUrl = otherMember?.user?.profile?.avatarUrl;
 
   const lastMessage = conversation.messages?.[0];
   const lastMessagePreview = lastMessage?.deletedAt

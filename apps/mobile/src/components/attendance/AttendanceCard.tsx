@@ -228,11 +228,20 @@ export function AttendanceCard({
         )}
 
         {status === 'checked_out' && (
-          <View style={styles.checkedOutInfo}>
-            <Text style={styles.checkedOutText}>
-              You've checked out for today
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.checkInAgainButton}
+            onPress={onCheckIn}
+            disabled={isActionLoading}
+          >
+            {isActionLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <MapPin size={18} color="#FFFFFF" />
+                <Text style={styles.checkInButtonText}>Check In Again</Text>
+              </>
+            )}
+          </TouchableOpacity>
         )}
       </View>
 
@@ -400,14 +409,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  checkedOutInfo: {
+  checkInAgainButton: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
     paddingVertical: spacing[3],
-  },
-  checkedOutText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.silver[500],
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.blue[600],
   },
   timeSummary: {
     flexDirection: 'row',
