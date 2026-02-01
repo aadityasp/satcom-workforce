@@ -1,17 +1,97 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Download, BarChart3, Users, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Download, BarChart3, Users, Clock, Calendar, X, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+
+interface ReportData {
+  title: string;
+  generatedAt: string;
+  rows: Record<string, string | number>[];
+}
 
 export default function ReportsPage() {
   const router = useRouter();
+  const [viewingReport, setViewingReport] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [exportingId, setExportingId] = useState<number | null>(null);
 
   const reports = [
-    { id: 1, name: 'Attendance Summary', desc: 'Daily attendance metrics', icon: Clock, color: 'blue' },
-    { id: 2, name: 'Employee Activity', desc: 'Work hours and breaks', icon: Users, color: 'green' },
-    { id: 3, name: 'Leave Analytics', desc: 'Leave patterns and balances', icon: Calendar, color: 'purple' },
-    { id: 4, name: 'Anomaly Report', desc: 'Flagged events summary', icon: BarChart3, color: 'orange' },
+    { id: 1, name: 'Attendance Summary', desc: 'Daily attendance metrics', icon: Clock, color: 'blue', route: '/reports/hr' },
+    { id: 2, name: 'Employee Activity', desc: 'Work hours and breaks', icon: Users, color: 'green', route: '/reports/hr' },
+    { id: 3, name: 'Leave Analytics', desc: 'Leave patterns and balances', icon: Calendar, color: 'purple', route: '/reports/hr' },
+    { id: 4, name: 'Anomaly Report', desc: 'Flagged events summary', icon: BarChart3, color: 'orange', route: '/admin/anomalies' },
   ];
+
+  const handleViewReport = (report: typeof reports[0]) => {
+    router.push(report.route);
+  };
+
+  const handleExportCSV = async (report: typeof reports[0]) => {
+    setExportingId(report.id);
+    try {
+      // Build CSV from current data by fetching summary
+      const end = new Date();
+      const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const startStr = start.toISOString().split('T')[0];
+      const endStr = end.toISOString().split('T')[0];
+
+      let csvContent = '';
+
+      if (report.id === 1 || report.id === 2) {
+        // Attendance data
+        const res = await api.get<any>(`/attendance?startDate=${startStr}&endDate=${endStr}&limit=100`);
+        if (res.success && res.data) {
+          const rows = Array.isArray(res.data) ? res.data : [];
+          csvContent = 'Date,User,Check In,Check Out,Status\n';
+          rows.forEach((r: any) => {
+            csvContent += `${r.date || ''},${r.userId || ''},${r.checkInTime || ''},${r.checkOutTime || ''},${r.status || ''}\n`;
+          });
+        }
+      } else if (report.id === 3) {
+        // Leave data
+        const res = await api.get<any>(`/leaves/requests?limit=100`);
+        if (res.success && res.data) {
+          const rows = Array.isArray(res.data) ? res.data : [];
+          csvContent = 'User,Type,Start,End,Days,Status\n';
+          rows.forEach((r: any) => {
+            csvContent += `${r.userId || ''},${r.leaveType?.name || ''},${r.startDate || ''},${r.endDate || ''},${r.totalDays || ''},${r.status || ''}\n`;
+          });
+        }
+      } else if (report.id === 4) {
+        // Anomaly data
+        const res = await api.get<any>(`/anomalies?limit=100`);
+        if (res.success && res.data) {
+          const rows = Array.isArray(res.data) ? res.data : [];
+          csvContent = 'Date,User,Type,Severity,Status,Description\n';
+          rows.forEach((r: any) => {
+            csvContent += `${r.detectedAt || ''},${r.userId || ''},${r.type || ''},${r.severity || ''},${r.status || ''},${(r.description || '').replace(/,/g, ';')}\n`;
+          });
+        }
+      }
+
+      if (!csvContent) {
+        csvContent = 'No data available for this report.\n';
+      }
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${report.name.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setExportingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-silver-50">
@@ -42,11 +122,20 @@ export default function ReportsPage() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <button className="btn-secondary text-sm py-1.5 flex items-center gap-2">
-                  <Download size={16} />
-                  Export CSV
+                <button
+                  onClick={() => handleExportCSV(report)}
+                  disabled={exportingId === report.id}
+                  className="btn-secondary text-sm py-1.5 flex items-center gap-2 disabled:opacity-50"
+                >
+                  {exportingId === report.id ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  {exportingId === report.id ? 'Exporting...' : 'Export CSV'}
                 </button>
-                <button className="btn-primary text-sm py-1.5">View Report</button>
+                <button
+                  onClick={() => handleViewReport(report)}
+                  className="btn-primary text-sm py-1.5"
+                >
+                  View Report
+                </button>
               </div>
             </div>
           ))}
