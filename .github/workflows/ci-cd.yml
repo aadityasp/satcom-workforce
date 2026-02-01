@@ -227,11 +227,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to staging
-        run: |
-          echo "Deploying to staging environment..."
-          # Add your deployment commands here
-          # Example: kubectl, helm, or SSH deployment
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to staging server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /opt/satcom-workforce
+            git pull origin develop
+
+            # Pull latest images
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api:${{ github.sha }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web:${{ github.sha }}
+
+            # Tag as staging
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api:${{ github.sha }} satcom-api:staging
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web:${{ github.sha }} satcom-web:staging
+
+            # Run migrations
+            docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+
+            # Restart services
+            docker compose -f docker-compose.prod.yml up -d --no-build
+
+            # Wait and health check
+            sleep 20
+            curl -f http://localhost:3003/health || exit 1
+
+      - name: Notify deployment result
+        if: always()
+        run: echo "Staging deployment ${{ job.status }}"
 
   # ============================================================
   # Deploy to Production
@@ -248,8 +281,56 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production environment..."
-          # Add your deployment commands here
-          # Example: kubectl, helm, or SSH deployment
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to production server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            cd /opt/satcom-workforce
+            git pull origin main
+
+            # Pull latest images
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api:${{ github.sha }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web:${{ github.sha }}
+
+            # Tag as production
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api:${{ github.sha }} satcom-api:production
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web:${{ github.sha }} satcom-web:production
+
+            # Create database backup before deploy
+            docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U $POSTGRES_USER $POSTGRES_DB > /opt/satcom-workforce/backups/pre-deploy-$(date +%Y%m%d_%H%M%S).sql
+
+            # Run migrations
+            docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+
+            # Restart services with zero-downtime
+            docker compose -f docker-compose.prod.yml up -d --no-build
+
+            # Wait and health check
+            sleep 30
+            curl -f http://localhost:3003/health || exit 1
+
+      - name: Verify production health
+        if: success()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            # Verify both services respond
+            curl -f http://localhost:3003/health
+            curl -f http://localhost:3000
+
+      - name: Notify deployment result
+        if: always()
+        run: echo "Production deployment ${{ job.status }}"

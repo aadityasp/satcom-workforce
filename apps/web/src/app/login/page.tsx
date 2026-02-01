@@ -7,7 +7,7 @@
  * Redirects to role-appropriate dashboard on success.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -15,6 +15,18 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 to-navy-950">
+        <Loader2 className="animate-spin text-white" size={32} />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isLoading, error, user } = useAuthStore();

@@ -5,7 +5,7 @@
  * Useful for displaying in headers or profile screens.
  */
 
-import { View, Text, StyleSheet, ColorValue } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Cloud, CloudOff } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useIsOnline } from '../../lib/offline';
@@ -41,9 +41,9 @@ export function OfflineIndicator({ showWhenOnline = false }: OfflineIndicatorPro
   return (
     <View style={[styles.container, !isOnline && styles.offline]}>
       {isOnline ? (
-        <Cloud size={14} color={colors.semantic.success.main as ColorValue} />
+        <Cloud size={14} color={colors.semantic.success.main as string} />
       ) : (
-        <CloudOff size={14} color={colors.semantic.warning.main as ColorValue} />
+        <CloudOff size={14} color={colors.semantic.warning.main as string} />
       )}
       <Text style={[styles.text, !isOnline && styles.offlineText]}>
         {isOnline ? 'Online' : 'Offline'}

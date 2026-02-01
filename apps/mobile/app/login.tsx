@@ -15,7 +15,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
+  ViewStyle,
 } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius['2xl'],
     padding: 32,
     ...shadows.lg,
-  },
+  } as ViewStyle,
   header: {
     alignItems: 'center',
     marginBottom: 32,
@@ -244,14 +244,14 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -10 }],
   },
   errorContainer: {
-    backgroundColor: colors.semantic.error + '15',
+    backgroundColor: colors.semantic.error.main + '15',
     borderRadius: borderRadius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   errorText: {
     fontSize: typography.fontSize.sm,
-    color: colors.semantic.error,
+    color: colors.semantic.error.main,
   },
   button: {
     backgroundColor: colors.blue[600],

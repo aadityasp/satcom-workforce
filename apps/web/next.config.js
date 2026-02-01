@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@satcom/shared'],
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

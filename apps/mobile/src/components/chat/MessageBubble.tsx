@@ -45,14 +45,14 @@ function StatusIndicator({ status }: { status?: MessageStatus }) {
       );
     case 'sent':
       return (
-        <View style={styles.statusIcon}>
-          <Check size={12} color="#FFFFFF" style={{ opacity: 0.7 }} />
+        <View style={[styles.statusIcon, { opacity: 0.7 }]}>
+          <Check size={12} color="#FFFFFF" />
         </View>
       );
     case 'delivered':
       return (
-        <View style={styles.statusIcon}>
-          <CheckCheck size={12} color="#FFFFFF" style={{ opacity: 0.7 }} />
+        <View style={[styles.statusIcon, { opacity: 0.7 }]}>
+          <CheckCheck size={12} color="#FFFFFF" />
         </View>
       );
     case 'read':
