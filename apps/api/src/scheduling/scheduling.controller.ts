@@ -57,8 +57,8 @@ export class SchedulingController {
 
   @Get('shifts')
   @ApiOperation({ summary: 'Get shifts' })
-  @ApiQuery({ name: 'startDate', required: true })
-  @ApiQuery({ name: 'endDate', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'userId', required: false })
   @ApiQuery({ name: 'departmentId', required: false })
   @ApiQuery({ name: 'locationId', required: false })
@@ -82,9 +82,13 @@ export class SchedulingController {
         ? user.id
         : userId;
 
+    // Default to current month if no dates provided
+    const end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
     const result = await this.schedulingService.getShifts(user.companyId, {
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: start,
+      endDate: end,
       userId: targetUserId,
       departmentId,
       locationId,
@@ -217,10 +221,14 @@ export class SchedulingController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    // Default to current month if no dates provided
+    const analyticsEnd = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    const analyticsStart = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
     const result = await this.schedulingService.getAnalytics(
       user.companyId,
-      new Date(startDate),
-      new Date(endDate),
+      analyticsStart,
+      analyticsEnd,
     );
     return { success: true, data: result };
   }

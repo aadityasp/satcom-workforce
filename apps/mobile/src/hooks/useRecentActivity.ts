@@ -96,12 +96,13 @@ export function useRecentActivity(): UseRecentActivityReturn {
       const endDate = format(new Date(), 'yyyy-MM-dd');
       const startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
 
-      const response = await api.get<{ data: AttendanceEvent[] }>(
+      const response = await api.get<AttendanceEvent[]>(
         `/attendance?startDate=${startDate}&endDate=${endDate}&limit=10`
       );
 
-      if (response.success && response.data?.data) {
-        const mapped = response.data.data
+      if (response.success && response.data) {
+        const rawData = Array.isArray(response.data) ? response.data : [];
+        const mapped = rawData
           .map(mapAttendanceEvent)
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
           .slice(0, 5);

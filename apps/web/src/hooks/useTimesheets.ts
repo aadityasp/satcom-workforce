@@ -103,11 +103,11 @@ export function useTimesheets(): UseTimesheetsReturn {
   const fetchEntries = useCallback(async (startDate: string, endDate: string) => {
     setIsLoading(true);
     try {
-      const response = await api.get<{ data: TimesheetEntry[] }>(
+      const response = await api.get<TimesheetEntry[]>(
         `/timesheets?startDate=${startDate}&endDate=${endDate}`
       );
       if (response.success && response.data) {
-        setEntries(response.data.data);
+        setEntries(Array.isArray(response.data) ? response.data : []);
       }
     } catch (err) {
       setError('Failed to load entries');

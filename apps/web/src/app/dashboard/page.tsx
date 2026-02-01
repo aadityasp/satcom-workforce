@@ -191,7 +191,7 @@ export default function DashboardPage() {
         setPendingLeaves(Array.isArray(leavesRes.data) ? leavesRes.data : []);
       }
       if (anomaliesRes.success && anomaliesRes.data) {
-        setAnomalies(anomaliesRes.data.data || []);
+        setAnomalies(Array.isArray(anomaliesRes.data) ? anomaliesRes.data : []);
       }
       if (presenceRes.success && presenceRes.data) {
         setPresenceList(presenceRes.data.users || []);

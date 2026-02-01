@@ -351,9 +351,9 @@ async function main() {
   ]);
   console.log('✅ Created projects and tasks');
 
-  // Create attendance records for last 7 days
+  // Create attendance records for last 7 days (exclude today so users can check in fresh)
   const today = new Date();
-  for (let dayOffset = 6; dayOffset >= 0; dayOffset--) {
+  for (let dayOffset = 6; dayOffset >= 1; dayOffset--) {
     const date = new Date(today);
     date.setDate(date.getDate() - dayOffset);
     date.setHours(0, 0, 0, 0);

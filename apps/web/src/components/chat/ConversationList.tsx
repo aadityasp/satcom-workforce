@@ -67,8 +67,20 @@ export function ConversationList() {
               <Loader2 className="h-6 w-6 animate-spin text-silver-400" />
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="text-center py-8 text-silver-500">
-              {searchQuery ? 'No conversations found' : 'No conversations yet'}
+            <div className="text-center py-12 px-4">
+              <MessageSquare className="h-12 w-12 mx-auto mb-3 text-silver-300" />
+              <p className="text-sm text-silver-500 mb-4">
+                {searchQuery ? 'No conversations found' : 'No conversations yet'}
+              </p>
+              {!searchQuery && (
+                <button
+                  onClick={() => setShowNewChat(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Chat
+                </button>
+              )}
             </div>
           ) : (
             filteredConversations.map((conversation) => (

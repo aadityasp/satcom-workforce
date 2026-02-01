@@ -131,23 +131,29 @@ export class ChatService {
   }
 
   async getMessages(threadId: string, userId: string, options: { cursor?: string; limit?: number }) {
-    const { cursor, limit = 50 } = options;
+    const take = Number(options.limit) || 50;
+    const { cursor } = options;
 
-    const messages = await this.prisma.chatMessage.findMany({
+    const queryArgs: any = {
       where: { threadId },
-      take: -limit,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'asc' as const },
+      take: cursor ? -take : take,
       include: {
         sender: { include: { profile: true } },
         statuses: {
           select: { userId: true, deliveredAt: true, readAt: true },
         },
       },
-    });
+    };
 
-    const hasMore = messages.length === limit;
+    if (cursor) {
+      queryArgs.cursor = { id: cursor };
+      queryArgs.skip = 1;
+    }
+
+    const messages = await this.prisma.chatMessage.findMany(queryArgs);
+
+    const hasMore = messages.length === take;
 
     return {
       messages,

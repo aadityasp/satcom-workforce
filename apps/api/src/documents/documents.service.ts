@@ -78,7 +78,9 @@ export class DocumentsService {
       limit?: number;
     }
   ) {
-    const { type, categoryId, userId, search, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { type, categoryId, userId, search } = options;
 
     const where: any = { companyId };
     if (type) where.type = type;

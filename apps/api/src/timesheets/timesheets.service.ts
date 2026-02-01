@@ -140,7 +140,9 @@ export class TimesheetsService {
       limit?: number;
     },
   ) {
-    const { projectId, startDate, endDate, page = 1, limit = 50 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 50;
+    const { projectId, startDate, endDate } = options;
     const skip = (page - 1) * limit;
 
     const where: any = {

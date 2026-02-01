@@ -93,10 +93,18 @@ export function usePresence(): UsePresenceReturn {
     };
   }, [accessToken, socket, connect]);
 
-  // Fetch initial data when connected
+  // Fetch initial data when connected, or immediately if not connected (REST fallback)
   useEffect(() => {
     if (isConnected) {
       refresh();
+    } else {
+      // If WebSocket is not connected, fetch via REST API as fallback
+      const timer = setTimeout(() => {
+        if (!isConnected) {
+          refresh();
+        }
+      }, 1000); // Wait 1 second for WebSocket to connect, then fallback to REST
+      return () => clearTimeout(timer);
     }
   }, [isConnected, refresh]);
 
@@ -144,10 +152,9 @@ export function usePresence(): UsePresenceReturn {
       isFirstMount.current = false;
       return;
     }
-    if (isConnected) {
-      refresh();
-    }
-  }, [statusFilter, departmentFilter, isConnected, refresh]);
+    // Always refresh when filters change, regardless of WebSocket connection
+    refresh();
+  }, [statusFilter, departmentFilter, refresh]);
 
   return {
     isConnected,

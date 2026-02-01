@@ -9,8 +9,7 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import type { User } from '@satcom/shared';
 
-// Use machine IP for simulator access - localhost doesn't work from iOS simulator
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.86.167:3003/api/v1';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3003/api/v1';
 
 /**
  * Keys for secure storage

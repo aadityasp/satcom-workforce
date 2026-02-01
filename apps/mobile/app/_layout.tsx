@@ -88,6 +88,8 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="chat" options={{ headerShown: false }} />
+          <Stack.Screen name="leave" options={{ headerShown: false }} />
         </Stack>
       </PersistQueryClientProvider>
     </GestureHandlerRootView>

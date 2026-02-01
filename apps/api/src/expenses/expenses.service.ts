@@ -106,7 +106,9 @@ export class ExpensesService {
       limit?: number;
     }
   ) {
-    const { userId, status, category, startDate, endDate, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { userId, status, category, startDate, endDate } = options;
 
     const where: any = { companyId };
     if (userId) where.userId = userId;

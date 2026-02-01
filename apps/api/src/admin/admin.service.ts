@@ -87,7 +87,9 @@ export class AdminService {
     page?: number;
     limit?: number;
   }) {
-    const { actorId, action, entityType, startDate, endDate, page = 1, limit = 50 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 50;
+    const { actorId, action, entityType, startDate, endDate } = options;
     const where: any = { actor: { companyId } };
 
     if (actorId) where.actorId = actorId;

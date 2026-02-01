@@ -119,8 +119,8 @@ export class AttendanceController {
   @Get()
   @ApiOperation({ summary: 'Get attendance history' })
   @ApiQuery({ name: 'userId', required: false })
-  @ApiQuery({ name: 'startDate', required: true })
-  @ApiQuery({ name: 'endDate', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getHistory(
@@ -137,9 +137,13 @@ export class AttendanceController {
         ? userId || user.id
         : user.id;
 
+    // Default to last 30 days if no dates provided
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const result = await this.attendanceService.getHistory(targetUserId, {
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: start,
+      endDate: end,
       page,
       limit,
     });
@@ -153,8 +157,8 @@ export class AttendanceController {
   @Get('summary')
   @ApiOperation({ summary: 'Get attendance summary' })
   @ApiQuery({ name: 'userId', required: false })
-  @ApiQuery({ name: 'startDate', required: true })
-  @ApiQuery({ name: 'endDate', required: true })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
   async getSummary(
     @CurrentUser() user: any,
     @Query('userId') userId: string,
@@ -166,10 +170,14 @@ export class AttendanceController {
         ? userId || user.id
         : user.id;
 
+    // Default to last 30 days if no dates provided
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const result = await this.attendanceService.getSummary(
       targetUserId,
-      new Date(startDate),
-      new Date(endDate),
+      start,
+      end,
     );
 
     return { success: true, data: result };
@@ -207,11 +215,15 @@ export class AttendanceController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    // Default to last 7 days if no dates provided
+    const locEnd = endDate ? new Date(endDate) : new Date();
+    const locStart = startDate ? new Date(startDate) : new Date(locEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+
     const locations = await this.attendanceService.getCheckInLocations(
       user.companyId,
       {
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: locStart,
+        endDate: locEnd,
       },
     );
     return { success: true, data: locations };

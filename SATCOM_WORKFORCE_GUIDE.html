@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satcom Workforce — Executive Feature Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --navy-900: #102a43;
+    --navy-800: #1a3a5c;
+    --navy-700: #243b53;
+    --blue-500: #0066ff;
+    --blue-600: #0052cc;
+    --blue-50: #e6f0ff;
+    --silver-50: #f8fafc;
+    --silver-100: #f1f5f9;
+    --silver-200: #e2e8f0;
+    --silver-300: #cbd5e1;
+    --silver-500: #64748b;
+    --silver-600: #475569;
+    --silver-700: #334155;
+    --success: #22c55e;
+    --success-bg: #f0fdf4;
+    --warning: #f59e0b;
+    --warning-bg: #fffbeb;
+    --error: #ef4444;
+    --error-bg: #fef2f2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--navy-900);
+    background: white;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media print {
+    body { font-size: 11pt; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none; }
+    .cover-page { min-height: 100vh; }
+    section { page-break-inside: avoid; }
+    .role-card { page-break-inside: avoid; }
+  }
+
+  /* Cover Page */
+  .cover-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 40%, var(--blue-600) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 80%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0,102,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .cover-page::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--blue-500), var(--success), var(--blue-500));
+  }
+
+  .cover-logo {
+    width: 100px;
+    height: 100px;
+    background: var(--blue-500);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    box-shadow: 0 20px 60px rgba(0,102,255,0.3);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-logo span {
+    font-size: 48px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -2px;
+  }
+
+  .cover-title {
+    font-size: 56px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -2px;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-subtitle {
+    font-size: 22px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    color: rgba(255,255,255,0.5);
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta span { display: flex; align-items: center; gap: 8px; }
+
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    padding: 10px 24px;
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 48px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+  }
+
+  /* Content pages */
+  .content-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+
+  /* Section Headers */
+  .section-header {
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--silver-200);
+  }
+
+  .section-number {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue-500);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--navy-900);
+    letter-spacing: -1.5px;
+    margin-bottom: 8px;
+  }
+
+  .section-desc {
+    font-size: 16px;
+    color: var(--silver-500);
+    max-width: 700px;
+  }
+
+  /* TOC */
+  .toc-list {
+    list-style: none;
+    counter-reset: toc-counter;
+  }
+
+  .toc-list li {
+    counter-increment: toc-counter;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--silver-100);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .toc-list li::before {
+    content: counter(toc-counter, decimal-leading-zero);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--blue-500);
+    min-width: 32px;
+  }
+
+  .toc-list li a {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--navy-900);
+    text-decoration: none;
+  }
+
+  .toc-list li a:hover { color: var(--blue-500); }
+
+  .toc-list li .toc-page {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--silver-500);
+    font-weight: 400;
+  }
+
+  /* Role Cards */
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 32px;
+  }
+
+  .role-card {
+    border: 1px solid var(--silver-200);
+    border-radius: 16px;
+    overflow: hidden;
+    background: white;
+  }
+
+  .role-card-header {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .role-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .role-card-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy-900);
+  }
+
+  .role-card-header p {
+    font-size: 13px;
+    color: var(--silver-500);
+    margin-top: 2px;
+  }
+
+  .role-card-body {
+    padding: 0 24px 24px;
+  }
+
+  .role-card-body ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .role-card-body li {
+    font-size: 13px;
+    color: var(--silver-600);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .role-card-body li::before {
+    content: '✓';
+    color: var(--success);
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .role-superadmin .role-card-header { background: linear-gradient(135deg, #fef2f2, #fff1f2); }
+  .role-superadmin .role-icon { background: #fee2e2; color: #dc2626; }
+  .role-hr .role-card-header { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); }
+  .role-hr .role-icon { background: #dbeafe; color: #2563eb; }
+  .role-manager .role-card-header { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+  .role-manager .role-icon { background: #dcfce7; color: #16a34a; }
+  .role-employee .role-card-header { background: linear-gradient(135deg, #fffbeb, #fef3c7); }
+  .role-employee .role-icon { background: #fef3c7; color: #d97706; }
+
+  /* Feature Sections */
+  .feature-section {
+    margin-bottom: 56px;
+  }
+
+  .feature-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .feature-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .feature-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy-900);
+  }
+
+  .feature-header p {
+    font-size: 14px;
+    color: var(--silver-500);
+    margin-top: 2px;
+  }
+
+  .feature-body {
+    background: var(--silver-50);
+    border: 1px solid var(--silver-200);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .feature-body p {
+    font-size: 14px;
+    color: var(--silver-600);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+
+  .feature-body p:last-child { margin-bottom: 0; }
+
+  /* Access tags */
+  .access-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .access-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-superadmin { background: #fee2e2; color: #dc2626; }
+  .tag-hr { background: #dbeafe; color: #2563eb; }
+  .tag-manager { background: #dcfce7; color: #16a34a; }
+  .tag-employee { background: #fef3c7; color: #d97706; }
+  .tag-all { background: var(--silver-100); color: var(--silver-600); }
+
+  /* Route info */
+  .route-info {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .route-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .route-web { background: #ede9fe; color: #7c3aed; }
+  .route-mobile { background: #fce7f3; color: #db2777; }
+  .route-api { background: #ecfdf5; color: #059669; }
+
+  /* Steps / How-to */
+  .steps-list {
+    list-style: none;
+    counter-reset: step-counter;
+    margin-top: 16px;
+  }
+
+  .steps-list li {
+    counter-increment: step-counter;
+    padding: 12px 0 12px 48px;
+    position: relative;
+    font-size: 14px;
+    color: var(--silver-700);
+    border-left: 2px solid var(--silver-200);
+    margin-left: 16px;
+  }
+
+  .steps-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: -14px;
+    top: 10px;
+    width: 26px;
+    height: 26px;
+    background: var(--blue-500);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .steps-list li:last-child { border-left-color: transparent; }
+
+  .steps-list li strong { color: var(--navy-900); }
+
+  /* Key-value table */
+  .kv-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .kv-table th {
+    text-align: left;
+    padding: 10px 16px;
+    background: var(--silver-100);
+    color: var(--silver-600);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--silver-200);
+  }
+
+  .kv-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--silver-100);
+    color: var(--silver-700);
+  }
+
+  .kv-table tr:last-child td { border-bottom: none; }
+
+  .kv-table .label { font-weight: 600; color: var(--navy-900); white-space: nowrap; }
+
+  /* Highlight box */
+  .highlight-box {
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  .highlight-info { background: var(--blue-50); border-left: 4px solid var(--blue-500); }
+  .highlight-success { background: var(--success-bg); border-left: 4px solid var(--success); }
+  .highlight-warning { background: var(--warning-bg); border-left: 4px solid var(--warning); }
+
+  .highlight-box strong { display: block; margin-bottom: 4px; color: var(--navy-900); }
+
+  /* Architecture diagram (text-based) */
+  .arch-diagram {
+    background: var(--navy-900);
+    border-radius: 12px;
+    padding: 32px;
+    color: rgba(255,255,255,0.9);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin: 24px 0;
+  }
+
+  .arch-diagram .dim { color: rgba(255,255,255,0.35); }
+  .arch-diagram .blue { color: #60a5fa; }
+  .arch-diagram .green { color: #4ade80; }
+  .arch-diagram .yellow { color: #fbbf24; }
+  .arch-diagram .pink { color: #f472b6; }
+
+  /* Stat grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+
+  .stat-card {
+    background: white;
+    border: 1px solid var(--silver-200);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--blue-500);
+    letter-spacing: -1px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 13px;
+    color: var(--silver-500);
+    margin-top: 4px;
+  }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--silver-200); margin: 40px 0; }
+
+  /* Credential box */
+  .cred-box {
+    background: var(--navy-900);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+  }
+
+  .cred-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .cred-row:last-child { border-bottom: none; }
+
+  .cred-role {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .cred-email {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  .cred-pass {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- COVER PAGE                                                    -->
+<!-- ============================================================ -->
+<div class="cover-page">
+  <div class="cover-logo"><span>S</span></div>
+  <div class="cover-badge">Production-Ready Platform</div>
+  <h1 class="cover-title">Satcom Workforce</h1>
+  <p class="cover-subtitle">Executive Feature Guide &amp; Platform Documentation</p>
+  <div class="cover-meta">
+    <span>Version 1.0</span>
+    <span>|</span>
+    <span>February 2026</span>
+    <span>|</span>
+    <span>Confidential</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS                                             -->
+<!-- ============================================================ -->
+<div class="content-page page-break">
+  <div class="section-header">
+    <div class="section-number">Contents</div>
+    <h2 class="section-title">Table of Contents</h2>
+  </div>
+
+  <ul class="toc-list">
+    <li><a href="#overview">Platform Overview</a><span class="toc-page">Architecture &amp; Key Metrics</span></li>
+    <li><a href="#roles">Role-Based Access</a><span class="toc-page">Permissions &amp; Capabilities by Role</span></li>
+    <li><a href="#auth">Authentication &amp; Login</a><span class="toc-page">Login, Password Reset, Demo Accounts</span></li>
+    <li><a href="#dashboard">Dashboards</a><span class="toc-page">Role-Specific Home Screens</span></li>
+    <li><a href="#attendance">Attendance &amp; Check-In</a><span class="toc-page">GPS Check-In, Breaks, Overtime</span></li>
+    <li><a href="#timesheets">Timesheets &amp; Time Tracking</a><span class="toc-page">Project-Based Time Entry</span></li>
+    <li><a href="#leaves">Leave Management</a><span class="toc-page">Requests, Approvals, Balances</span></li>
+    <li><a href="#chat">Chat &amp; Messaging</a><span class="toc-page">Real-Time Team Communication</span></li>
+    <li><a href="#anomalies">Anomaly Detection</a><span class="toc-page">Automated Workforce Alerts</span></li>
+    <li><a href="#geofence">Geofence &amp; Locations</a><span class="toc-page">Office Boundaries &amp; Verification</span></li>
+    <li><a href="#scheduling">Scheduling &amp; Shifts</a><span class="toc-page">Shift Planning, Swaps, Templates</span></li>
+    <li><a href="#projects">Projects &amp; Tasks</a><span class="toc-page">Project Management &amp; Assignment</span></li>
+    <li><a href="#users">User Management</a><span class="toc-page">CRUD, Roles, Onboarding</span></li>
+    <li><a href="#reports">Reports &amp; Analytics</a><span class="toc-page">Dashboards, Team Metrics</span></li>
+    <li><a href="#notifications">Notifications</a><span class="toc-page">Push, Email, In-App Alerts</span></li>
+    <li><a href="#documents">Documents &amp; Compliance</a><span class="toc-page">File Management &amp; Policies</span></li>
+    <li><a href="#expenses">Expenses &amp; Reimbursement</a><span class="toc-page">Submission, Approval, Tracking</span></li>
+    <li><a href="#training">Training &amp; Certifications</a><span class="toc-page">Programs, Assignments, Compliance</span></li>
+    <li><a href="#audit">Audit Logs</a><span class="toc-page">Complete System Activity Trail</span></li>
+    <li><a href="#settings">System Settings &amp; Policies</a><span class="toc-page">Work Rules, Retention, Configuration</span></li>
+    <li><a href="#tech">Technical Architecture</a><span class="toc-page">Stack, Deployment, Security</span></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- 01. PLATFORM OVERVIEW                                         -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="overview">
+  <div class="section-header">
+    <div class="section-number">Section 01</div>
+    <h2 class="section-title">Platform Overview</h2>
+    <p class="section-desc">Satcom Workforce is a full-stack employee management platform built for modern, distributed teams. It covers attendance, time tracking, leave management, real-time collaboration, anomaly detection, and enterprise compliance.</p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value">20+</div>
+      <div class="stat-label">Feature Modules</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">4</div>
+      <div class="stat-label">User Roles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Platforms (Web, Mobile, API)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">60+</div>
+      <div class="stat-label">API Endpoints</div>
+    </div>
+  </div>
+
+  <div class="arch-diagram">
+<span class="dim">┌──────────────────────────────────────────────────────────────────┐</span>
+<span class="dim">│</span>                    <span class="blue">SATCOM WORKFORCE ARCHITECTURE</span>                    <span class="dim">│</span>
+<span class="dim">├──────────────────────────────────────────────────────────────────┤</span>
+<span class="dim">│</span>                                                                  <span class="dim">│</span>
+<span class="dim">│</span>   <span class="yellow">┌──────────────┐</span>   <span class="pink">┌──────────────┐</span>   <span class="green">┌──────────────┐</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="yellow">│  Next.js 14  │</span>   <span class="pink">│  Expo / RN   │</span>   <span class="green">│   Nginx LB   │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="yellow">│   Web App    │</span>   <span class="pink">│  Mobile App  │</span>   <span class="green">│  (Reverse)   │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="yellow">│  Port 3000   │</span>   <span class="pink">│  Port 8081   │</span>   <span class="green">│   Port 80    │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="yellow">└──────┬───────┘</span>   <span class="pink">└──────┬───────┘</span>   <span class="green">└──────┬───────┘</span>   <span class="dim">│</span>
+<span class="dim">│</span>          <span class="yellow">│</span>                  <span class="pink">│</span>                  <span class="green">│</span>           <span class="dim">│</span>
+<span class="dim">│</span>          <span class="yellow">└──────────────────┼──────────────────┘</span>           <span class="dim">│</span>
+<span class="dim">│</span>                           <span class="yellow">│</span>                                  <span class="dim">│</span>
+<span class="dim">│</span>                  <span class="blue">┌────────┴────────┐</span>                        <span class="dim">│</span>
+<span class="dim">│</span>                  <span class="blue">│   NestJS API    │</span>                        <span class="dim">│</span>
+<span class="dim">│</span>                  <span class="blue">│  + Socket.IO    │</span>                        <span class="dim">│</span>
+<span class="dim">│</span>                  <span class="blue">│   Port 3003     │</span>                        <span class="dim">│</span>
+<span class="dim">│</span>                  <span class="blue">└──┬──────────┬───┘</span>                        <span class="dim">│</span>
+<span class="dim">│</span>                     <span class="blue">│</span>          <span class="blue">│</span>                              <span class="dim">│</span>
+<span class="dim">│</span>          <span class="green">┌──────────┘</span>          <span class="green">└──────────┐</span>                <span class="dim">│</span>
+<span class="dim">│</span>   <span class="green">┌──────┴───────┐</span>   <span class="green">┌──────────────┐</span>   <span class="green">┌──────────────┐</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="green">│ PostgreSQL   │</span>   <span class="green">│    Redis     │</span>   <span class="green">│    MinIO     │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="green">│  (Prisma)    │</span>   <span class="green">│  (Cache/WS)  │</span>   <span class="green">│ (S3 Storage) │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="green">│  Port 5432   │</span>   <span class="green">│  Port 6379   │</span>   <span class="green">│  Port 9000   │</span>   <span class="dim">│</span>
+<span class="dim">│</span>   <span class="green">└──────────────┘</span>   <span class="green">└──────────────┘</span>   <span class="green">└──────────────┘</span>   <span class="dim">│</span>
+<span class="dim">│</span>                                                                  <span class="dim">│</span>
+<span class="dim">└──────────────────────────────────────────────────────────────────┘</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 02. ROLE-BASED ACCESS                                         -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="roles">
+  <div class="section-header">
+    <div class="section-number">Section 02</div>
+    <h2 class="section-title">Role-Based Access</h2>
+    <p class="section-desc">Four hierarchical roles govern what each user can see and do across the platform. Permissions cascade from Employee up to SuperAdmin.</p>
+  </div>
+
+  <div class="role-grid">
+    <!-- SuperAdmin -->
+    <div class="role-card role-superadmin">
+      <div class="role-card-header">
+        <div class="role-icon">&#128272;</div>
+        <div>
+          <h3>SuperAdmin</h3>
+          <p>Full platform control &amp; configuration</p>
+        </div>
+      </div>
+      <div class="role-card-body">
+        <ul>
+          <li>Admin Dashboard</li>
+          <li>User CRUD</li>
+          <li>Attendance Overview</li>
+          <li>Anomaly Management</li>
+          <li>Geofence Config</li>
+          <li>Audit Logs</li>
+          <li>Project Management</li>
+          <li>System Settings</li>
+          <li>Reports &amp; Analytics</li>
+          <li>Leave Approvals</li>
+          <li>Chat &amp; Messaging</li>
+          <li>Notifications</li>
+          <li>Office Locations</li>
+          <li>Map Visualization</li>
+        </ul>
+        <div class="highlight-box highlight-warning" style="margin-top: 16px;">
+          <strong>Note:</strong> SuperAdmins do NOT have check-in/check-out. They are platform administrators, not tracked employees.
+        </div>
+      </div>
+    </div>
+
+    <!-- HR -->
+    <div class="role-card role-hr">
+      <div class="role-card-header">
+        <div class="role-icon">&#128101;</div>
+        <div>
+          <h3>HR</h3>
+          <p>People operations &amp; compliance</p>
+        </div>
+      </div>
+      <div class="role-card-body">
+        <ul>
+          <li>HR Dashboard</li>
+          <li>Leave Approvals</li>
+          <li>Attendance Overview</li>
+          <li>Anomaly Management</li>
+          <li>Document Management</li>
+          <li>Scheduling</li>
+          <li>Training Programs</li>
+          <li>Expense Approvals</li>
+          <li>Payroll Processing</li>
+          <li>Reports &amp; Analytics</li>
+          <li>User Management</li>
+          <li>Chat &amp; Messaging</li>
+          <li>Notifications</li>
+          <li>Team Activity</li>
+        </ul>
+        <div class="highlight-box highlight-warning" style="margin-top: 16px;">
+          <strong>Note:</strong> HR does NOT have check-in/check-out or System Settings access.
+        </div>
+      </div>
+    </div>
+
+    <!-- Manager -->
+    <div class="role-card role-manager">
+      <div class="role-card-header">
+        <div class="role-icon">&#128188;</div>
+        <div>
+          <h3>Manager</h3>
+          <p>Team oversight with personal tracking</p>
+        </div>
+      </div>
+      <div class="role-card-body">
+        <ul>
+          <li>Personal Dashboard</li>
+          <li>Check-In / Check-Out</li>
+          <li>Own Attendance</li>
+          <li>Own Timesheets</li>
+          <li>Own Leaves</li>
+          <li>Team Reports</li>
+          <li>Team Activity View</li>
+          <li>Chat &amp; Messaging</li>
+          <li>Notifications</li>
+          <li>Shift Scheduling</li>
+          <li>Expense Approvals</li>
+          <li>Break Management</li>
+        </ul>
+        <div class="highlight-box highlight-success" style="margin-top: 16px;">
+          <strong>Dual Role:</strong> Managers have both personal employee features (check-in, timesheets) AND team oversight capabilities.
+        </div>
+      </div>
+    </div>
+
+    <!-- Employee -->
+    <div class="role-card role-employee">
+      <div class="role-card-header">
+        <div class="role-icon">&#128100;</div>
+        <div>
+          <h3>Employee</h3>
+          <p>Personal tracking &amp; self-service</p>
+        </div>
+      </div>
+      <div class="role-card-body">
+        <ul>
+          <li>Personal Dashboard</li>
+          <li>Check-In / Check-Out</li>
+          <li>Attendance History</li>
+          <li>Break Management</li>
+          <li>Timesheets</li>
+          <li>Leave Requests</li>
+          <li>Team Directory</li>
+          <li>Chat &amp; Messaging</li>
+          <li>Notifications</li>
+          <li>Shift View</li>
+          <li>Expense Submission</li>
+          <li>Training Assignments</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 03. AUTHENTICATION                                            -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="auth">
+  <div class="section-header">
+    <div class="section-number">Section 03</div>
+    <h2 class="section-title">Authentication &amp; Login</h2>
+    <p class="section-desc">Secure JWT-based authentication with OTP device verification, token rotation, and multi-device logout support.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: var(--blue-50);">&#128274;</div>
+      <div>
+        <h3>Login Flow</h3>
+        <p>How users access the platform</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-all">All Roles</span>
+      </div>
+      <p>Users authenticate with their company email and password. The system issues a JWT access token and a refresh token. New device logins trigger OTP verification via email for additional security.</p>
+
+      <ol class="steps-list">
+        <li><strong>Navigate to the login page</strong> — Open the web app at <code>http://localhost:3000</code> or launch the mobile app. You will be redirected to the login screen.</li>
+        <li><strong>Enter credentials</strong> — Type your company email and password, then click "Sign In".</li>
+        <li><strong>Device verification (if new device)</strong> — A 6-digit OTP is sent to your email. Enter the code to verify.</li>
+        <li><strong>Dashboard redirect</strong> — You are automatically routed to your role-specific dashboard.</li>
+      </ol>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /login</span>
+        <span class="route-badge route-mobile">Mobile: /login</span>
+        <span class="route-badge route-api">API: POST /auth/login</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: var(--warning-bg);">&#128273;</div>
+      <div>
+        <h3>Password Recovery</h3>
+        <p>Self-service password reset</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>Users can reset their password without admin intervention. A reset link is sent to their registered email address.</p>
+      <ol class="steps-list">
+        <li><strong>Click "Forgot Password"</strong> on the login page.</li>
+        <li><strong>Enter your email</strong> — The system sends a reset link.</li>
+        <li><strong>Open the email</strong> and click the reset link.</li>
+        <li><strong>Set a new password</strong> and confirm. You can then log in normally.</li>
+      </ol>
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /forgot-password</span>
+        <span class="route-badge route-web">Web: /reset-password</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: var(--silver-100);">&#128736;</div>
+      <div>
+        <h3>Demo Accounts</h3>
+        <p>Pre-seeded test credentials</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <p>The system comes pre-loaded with demo accounts for each role:</p>
+      <div class="cred-box">
+        <div class="cred-row">
+          <span class="cred-role tag-superadmin">SuperAdmin</span>
+          <span class="cred-email">admin@satcom.com</span>
+          <span class="cred-pass">Password123!</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-role tag-hr">HR</span>
+          <span class="cred-email">hr@satcom.com</span>
+          <span class="cred-pass">Password123!</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-role tag-manager">Manager</span>
+          <span class="cred-email">manager@satcom.com</span>
+          <span class="cred-pass">Password123!</span>
+        </div>
+        <div class="cred-row">
+          <span class="cred-role tag-employee">Employee</span>
+          <span class="cred-email">john@satcom.com</span>
+          <span class="cred-pass">Password123!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 04. DASHBOARDS                                                -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="dashboard">
+  <div class="section-header">
+    <div class="section-number">Section 04</div>
+    <h2 class="section-title">Dashboards</h2>
+    <p class="section-desc">Every role gets a tailored home screen with quick actions, live metrics, and contextual information.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fee2e2;">&#128272;</div>
+      <div>
+        <h3>SuperAdmin Dashboard</h3>
+        <p>Organization-wide operational view</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin</span></div>
+      <p>The SuperAdmin dashboard provides a bird's-eye view of the entire organization. It displays real-time summary cards (employees online, checked in, on leave, open anomalies), quick-action buttons to navigate to all admin modules, team activity feed, and recent system activity logs.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Summary Cards</td><td>Online Count, Checked In, On Leave, Open Anomalies, Pending Leaves, Attendance Rate</td></tr>
+        <tr><td class="label">Quick Actions</td><td>Manage Users, View Attendance, Anomalies, Audit Logs, Locations, Projects, Settings</td></tr>
+        <tr><td class="label">Live Sections</td><td>Team Activity (real-time presence), Recent Activity (audit trail), Anomaly Alerts</td></tr>
+      </table>
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dbeafe;">&#128101;</div>
+      <div>
+        <h3>HR Dashboard</h3>
+        <p>People operations command center</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-hr">HR</span></div>
+      <p>The HR dashboard focuses on people management with pending actions front and center. It shows leave requests awaiting approval, attendance exceptions, workforce analytics, and quick links to HR-specific modules like documents, scheduling, and training.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Key Metrics</td><td>Pending Leaves, Today's Attendance Rate, Active Anomalies, Team Status</td></tr>
+        <tr><td class="label">Quick Actions</td><td>Leave Approvals, Attendance Overview, Documents, Scheduling, Training, Expenses</td></tr>
+        <tr><td class="label">Sections</td><td>Recent Activity Feed, Pending Actions Queue, Team Activity Overview</td></tr>
+      </table>
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /hr</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dcfce7;">&#128188;</div>
+      <div>
+        <h3>Manager / Employee Dashboard</h3>
+        <p>Personal workspace with check-in</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-manager">Manager</span>
+        <span class="access-tag tag-employee">Employee</span>
+      </div>
+      <p>The personal dashboard is the primary workspace for Managers and Employees. It features a prominent Check-In/Check-Out button, real-time work duration timer, break controls, project/task activity selector, today's attendance summary, and quick navigation to timesheets, leaves, and chat.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Check-In Card</td><td>Large CTA button, work mode selector (Office/Remote/Field), GPS capture, live timer</td></tr>
+        <tr><td class="label">Work Summary</td><td>Hours worked today, break time, overtime indicator, remaining hours</td></tr>
+        <tr><td class="label">Quick Actions</td><td>View Attendance, Timesheets, Leave Requests, Team, Chat</td></tr>
+        <tr><td class="label">Manager Extra</td><td>Team activity sidebar, direct report status, team metrics</td></tr>
+      </table>
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /dashboard</span>
+        <span class="route-badge route-mobile">Mobile: /(tabs)/home</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 05. ATTENDANCE                                                -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="attendance">
+  <div class="section-header">
+    <div class="section-number">Section 05</div>
+    <h2 class="section-title">Attendance &amp; Check-In</h2>
+    <p class="section-desc">GPS-enabled attendance tracking with work mode selection, break management, and multi-session support throughout the day.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dcfce7;">&#128205;</div>
+      <div>
+        <h3>Check-In / Check-Out</h3>
+        <p>Core daily attendance recording</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-manager">Manager</span>
+        <span class="access-tag tag-employee">Employee</span>
+      </div>
+      <p>Employees check in at the start of their workday and check out when done. The system captures GPS coordinates, device info, and work mode. Multiple check-in/check-out sessions per day are supported (e.g., if an employee leaves for lunch and returns).</p>
+
+      <ol class="steps-list">
+        <li><strong>Open the Dashboard</strong> — The check-in card is prominently displayed at the top.</li>
+        <li><strong>Select Work Mode</strong> — Choose from Office, Remote, Customer Site, Field Visit, or Travel.</li>
+        <li><strong>Tap "Check In"</strong> — GPS location is captured automatically. If geofencing is enabled, location is validated against office boundaries.</li>
+        <li><strong>Work Timer Starts</strong> — A live counter shows elapsed work time. You can select your current project/task.</li>
+        <li><strong>Take Breaks</strong> — Use "Start Break" or "Start Lunch" buttons. Break duration is tracked separately.</li>
+        <li><strong>Tap "Check Out"</strong> — Day summary is generated showing total work time, breaks, and overtime.</li>
+      </ol>
+
+      <div class="highlight-box highlight-info">
+        <strong>Work Modes:</strong> Office (on-site), Remote (WFH), CustomerSite (client location), FieldVisit (outdoor assignment), Travel (in transit).
+      </div>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /dashboard</span>
+        <span class="route-badge route-mobile">Mobile: /(tabs)/home</span>
+        <span class="route-badge route-api">API: POST /attendance/check-in</span>
+        <span class="route-badge route-api">API: POST /attendance/check-out</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fef3c7;">&#9749;</div>
+      <div>
+        <h3>Break Management</h3>
+        <p>Track breaks and lunch periods</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-manager">Manager</span>
+        <span class="access-tag tag-employee">Employee</span>
+      </div>
+      <p>Break and lunch durations are tracked separately from work time. Standard break is 15 minutes and lunch is 60 minutes (configurable in system settings). Anomaly detection flags excessive breaks automatically.</p>
+      <div class="route-info">
+        <span class="route-badge route-api">API: POST /attendance/break/start</span>
+        <span class="route-badge route-api">API: POST /attendance/break/:id/end</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dbeafe;">&#128202;</div>
+      <div>
+        <h3>Attendance History &amp; Overview</h3>
+        <p>Historical records and admin overview</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-all">All Roles</span>
+      </div>
+      <p>All users can view their own attendance history with daily breakdown of check-in/out times, work duration, breaks, and overtime. HR and SuperAdmin can view all employees' attendance records with filtering by user, date range, and status.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Personal View</td><td>Own daily/weekly/monthly attendance with work hours breakdown</td></tr>
+        <tr><td class="label">Admin View</td><td>Organization-wide attendance grid, today's check-ins, late arrivals, absent employees</td></tr>
+        <tr><td class="label">Override</td><td>HR/SuperAdmin can manually override attendance entries with tracked reasons</td></tr>
+        <tr><td class="label">Map View</td><td>SuperAdmin can visualize check-in locations on an interactive map</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /attendance</span>
+        <span class="route-badge route-web">Web: /admin/attendance</span>
+        <span class="route-badge route-web">Web: /admin/map</span>
+        <span class="route-badge route-mobile">Mobile: /(tabs)/attendance</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 06. TIMESHEETS                                                -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="timesheets">
+  <div class="section-header">
+    <div class="section-number">Section 06</div>
+    <h2 class="section-title">Timesheets &amp; Time Tracking</h2>
+    <p class="section-desc">Project-based time entry with approval workflows, attachment support, and automated summaries.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #ede9fe;">&#128337;</div>
+      <div>
+        <h3>Timesheet Entry</h3>
+        <p>Log time against projects and tasks</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-manager">Manager</span>
+        <span class="access-tag tag-employee">Employee</span>
+      </div>
+      <p>Employees log their work time against specific projects and tasks. Entries include duration in minutes, notes describing the work performed, and optional file attachments (screenshots, documents). Entries go through a Draft → Submitted → Approved workflow.</p>
+
+      <ol class="steps-list">
+        <li><strong>Navigate to Timesheets</strong> — Click "Timesheets" in the sidebar or dashboard quick actions.</li>
+        <li><strong>Click "New Entry"</strong> — A form opens with project/task selector, date, and duration fields.</li>
+        <li><strong>Select Project &amp; Task</strong> — Choose from assigned projects. Tasks are filtered per project.</li>
+        <li><strong>Enter Time &amp; Notes</strong> — Enter duration (in minutes), add a description of work done.</li>
+        <li><strong>Attach Files (optional)</strong> — Upload supporting documents or screenshots.</li>
+        <li><strong>Submit</strong> — Entry moves from Draft to Submitted and awaits approval.</li>
+      </ol>
+
+      <table class="kv-table">
+        <tr><td class="label">Statuses</td><td>Draft, Submitted, Approved, Rejected</td></tr>
+        <tr><td class="label">Max Daily</td><td>1440 minutes (24 hours, configurable)</td></tr>
+        <tr><td class="label">Notes</td><td>Optional or required (configurable in work policy)</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /timesheets</span>
+        <span class="route-badge route-mobile">Mobile: /(tabs)/timesheet</span>
+        <span class="route-badge route-api">API: POST /timesheets</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 07. LEAVE MANAGEMENT                                          -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="leaves">
+  <div class="section-header">
+    <div class="section-number">Section 07</div>
+    <h2 class="section-title">Leave Management</h2>
+    <p class="section-desc">Complete leave lifecycle from request to approval, with configurable leave types, balances, carry-forward policies, and a company holiday calendar.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fce7f3;">&#128197;</div>
+      <div>
+        <h3>Leave Requests</h3>
+        <p>Submit and track time-off requests</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-manager">Manager</span>
+        <span class="access-tag tag-employee">Employee</span>
+      </div>
+      <p>Employees submit leave requests by selecting a leave type, date range, and providing a reason. The system checks available balance and routes the request for approval.</p>
+
+      <ol class="steps-list">
+        <li><strong>Go to Leaves</strong> — Navigate via sidebar or dashboard. Your current balances are displayed at the top.</li>
+        <li><strong>Click "New Request"</strong> — Opens the leave request form.</li>
+        <li><strong>Select Leave Type</strong> — Choose from Sick, Casual, Earned, WFH, CompOff, and more.</li>
+        <li><strong>Pick Date Range</strong> — Select start and end dates. Duration is auto-calculated.</li>
+        <li><strong>Add Reason</strong> — Provide the reason for leave.</li>
+        <li><strong>Submit</strong> — Request is sent for HR/SuperAdmin approval.</li>
+      </ol>
+
+      <table class="kv-table">
+        <thead><tr><th>Leave Type</th><th>Description</th></tr></thead>
+        <tr><td class="label">Sick Leave</td><td>Medical leave with optional documentation</td></tr>
+        <tr><td class="label">Casual Leave</td><td>Personal time off for short absences</td></tr>
+        <tr><td class="label">Earned Leave</td><td>Accrued paid leave, carry-forward eligible</td></tr>
+        <tr><td class="label">Work From Home</td><td>Remote work day (counts as present)</td></tr>
+        <tr><td class="label">Compensatory Off</td><td>Time off earned for working holidays/weekends</td></tr>
+        <tr><td class="label">Maternity / Paternity</td><td>Parental leave as per company policy</td></tr>
+        <tr><td class="label">Bereavement</td><td>Leave for family emergencies</td></tr>
+        <tr><td class="label">Floating Holiday</td><td>Optional holidays employees can take</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /leaves</span>
+        <span class="route-badge route-mobile">Mobile: Leaves screen</span>
+        <span class="route-badge route-api">API: POST /leaves/request</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dcfce7;">&#9989;</div>
+      <div>
+        <h3>Leave Approvals</h3>
+        <p>Review and process leave requests</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+      </div>
+      <p>HR and SuperAdmin users review pending leave requests, check balances, and approve or reject with a reason. The employee is notified of the decision.</p>
+
+      <ol class="steps-list">
+        <li><strong>Navigate to Leave Management</strong> — Via admin/HR dashboard or sidebar under "Leaves".</li>
+        <li><strong>View Pending Requests</strong> — All pending requests are listed with employee name, type, dates, and reason.</li>
+        <li><strong>Review Details</strong> — Check the employee's remaining balance and request reason.</li>
+        <li><strong>Approve or Reject</strong> — Click the action button. If rejecting, provide a reason.</li>
+      </ol>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/leaves</span>
+        <span class="route-badge route-api">API: POST /leaves/requests/:id/approve</span>
+        <span class="route-badge route-api">API: POST /leaves/requests/:id/reject</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 08. CHAT                                                      -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="chat">
+  <div class="section-header">
+    <div class="section-number">Section 08</div>
+    <h2 class="section-title">Chat &amp; Messaging</h2>
+    <p class="section-desc">Real-time team communication with direct messages, group chats, file attachments, voice notes, and read receipts powered by Socket.IO.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #ede9fe;">&#128172;</div>
+      <div>
+        <h3>Messaging Features</h3>
+        <p>Full-featured chat system</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-all">All Roles</span></div>
+      <p>The chat system provides real-time messaging across the organization. Users can start direct conversations, create group chats, share files, send voice notes, and search for colleagues company-wide.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Direct Messages</td><td>One-on-one private conversations between any two users</td></tr>
+        <tr><td class="label">Group Chats</td><td>Multi-user conversations with custom naming</td></tr>
+        <tr><td class="label">File Attachments</td><td>Share documents, images, and files within conversations</td></tr>
+        <tr><td class="label">Voice Notes</td><td>Record and send voice messages with duration tracking</td></tr>
+        <tr><td class="label">Read Receipts</td><td>Per-recipient delivery and read status tracking</td></tr>
+        <tr><td class="label">Message Editing</td><td>Edit sent messages within a 15-minute window</td></tr>
+        <tr><td class="label">Unread Badges</td><td>Visual indicators for unread messages in conversation list</td></tr>
+        <tr><td class="label">User Search</td><td>Company-wide user search to start new conversations</td></tr>
+      </table>
+
+      <ol class="steps-list">
+        <li><strong>Open Chat</strong> — Navigate to the Chat section from the sidebar.</li>
+        <li><strong>Select or Start Conversation</strong> — Pick an existing thread or search for a user to start a new one.</li>
+        <li><strong>Send Messages</strong> — Type text, attach files, or record voice notes.</li>
+        <li><strong>Real-Time Updates</strong> — Messages appear instantly via WebSocket connection.</li>
+      </ol>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /chat</span>
+        <span class="route-badge route-mobile">Mobile: Chat screen</span>
+        <span class="route-badge route-api">API: /chat/*</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 09. ANOMALIES                                                 -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="anomalies">
+  <div class="section-header">
+    <div class="section-number">Section 09</div>
+    <h2 class="section-title">Anomaly Detection</h2>
+    <p class="section-desc">Automated detection of irregular workforce patterns with severity levels, acknowledgement workflows, and resolution tracking.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fee2e2;">&#9888;&#65039;</div>
+      <div>
+        <h3>Anomaly Management</h3>
+        <p>Detect and resolve workforce irregularities</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+      </div>
+      <p>The system automatically detects anomalous patterns in attendance, timesheets, and geofence data. Each anomaly is categorized by type and severity, and follows an Open → Acknowledged → Resolved workflow.</p>
+
+      <table class="kv-table">
+        <thead><tr><th>Anomaly Type</th><th>Description</th><th>Severity</th></tr></thead>
+        <tr><td class="label">Repeated Late Check-In</td><td>Employee consistently checks in after grace period</td><td>Medium</td></tr>
+        <tr><td class="label">Missing Check-Out</td><td>Employee checked in but never checked out</td><td>Low</td></tr>
+        <tr><td class="label">Excessive Break</td><td>Break duration exceeds configured limit</td><td>Low</td></tr>
+        <tr><td class="label">Overtime Spike</td><td>Sudden increase in overtime hours</td><td>Medium</td></tr>
+        <tr><td class="label">Timesheet Mismatch</td><td>Logged time doesn't match attendance records</td><td>High</td></tr>
+        <tr><td class="label">Geofence Failure</td><td>Check-in location outside office boundaries</td><td>High</td></tr>
+        <tr><td class="label">Unusual Pattern</td><td>AI-detected irregular behavior pattern</td><td>Critical</td></tr>
+      </table>
+
+      <ol class="steps-list">
+        <li><strong>View Anomalies</strong> — Navigate to the Anomalies page from admin/HR dashboard.</li>
+        <li><strong>Filter by Status/Severity</strong> — Focus on Open or Critical anomalies first.</li>
+        <li><strong>Review Details</strong> — See affected employee, timestamp, and anomaly specifics.</li>
+        <li><strong>Take Action</strong> — Acknowledge (investigating), Resolve (issue addressed), or Dismiss (false positive).</li>
+      </ol>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/anomalies</span>
+        <span class="route-badge route-api">API: GET /anomalies</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10. GEOFENCE                                                  -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="geofence">
+  <div class="section-header">
+    <div class="section-number">Section 10</div>
+    <h2 class="section-title">Geofence &amp; Office Locations</h2>
+    <p class="section-desc">Define office boundaries with GPS coordinates and radius to verify employee check-ins occur within approved areas.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dcfce7;">&#127759;</div>
+      <div>
+        <h3>Office Location Management</h3>
+        <p>Add and configure office geofence zones</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin</span></div>
+      <p>SuperAdmins can add office locations with GPS coordinates and define a geofence radius. When employees check in, their GPS position is compared against these boundaries. Locations can be activated or deactivated as needed.</p>
+
+      <ol class="steps-list">
+        <li><strong>Go to Locations</strong> — Navigate to Admin → Office Locations.</li>
+        <li><strong>Click "Add Location"</strong> — A modal form opens.</li>
+        <li><strong>Enter Details</strong> — Name (e.g., "HQ Mumbai"), full address, latitude/longitude, and radius in meters.</li>
+        <li><strong>Save</strong> — The location appears in the table and is immediately active for geofence validation.</li>
+        <li><strong>Edit or Deactivate</strong> — Use the action menu on any location row to modify or disable it.</li>
+      </ol>
+
+      <div class="highlight-box highlight-info">
+        <strong>Geofence Policy:</strong> Enable/disable geofencing globally, require office-only check-ins, or allow bypass with reason — all configurable in System Settings.
+      </div>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/locations</span>
+        <span class="route-badge route-api">API: POST /locations</span>
+        <span class="route-badge route-api">API: GET /locations</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dbeafe;">&#128506;</div>
+      <div>
+        <h3>Check-In Map Visualization</h3>
+        <p>See where employees are checking in</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin</span></div>
+      <p>An interactive map shows all employee check-in locations for a selected date range. Office geofence boundaries are overlaid as circles, making it easy to spot out-of-range check-ins.</p>
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/map</span>
+        <span class="route-badge route-api">API: GET /attendance/locations</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11. SCHEDULING                                                -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="scheduling">
+  <div class="section-header">
+    <div class="section-number">Section 11</div>
+    <h2 class="section-title">Scheduling &amp; Shifts</h2>
+    <p class="section-desc">Flexible shift planning with templates, auto-scheduling, swap requests, and analytics for optimal workforce coverage.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fef3c7;">&#128197;</div>
+      <div>
+        <h3>Shift Management</h3>
+        <p>Create, assign, and manage work shifts</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+        <span class="access-tag tag-manager">Manager</span>
+      </div>
+      <p>Create and assign shifts to employees with start/end times, location, and department assignments. Employees can clock in/out of their assigned shifts, and the system tracks shift compliance.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Create Shifts</td><td>Assign employee, set times, location, department, break duration</td></tr>
+        <tr><td class="label">Shift Templates</td><td>Save repeating patterns (e.g., Morning 9-5, Night 10PM-6AM) for quick reuse</td></tr>
+        <tr><td class="label">Auto-Schedule</td><td>AI-optimized scheduling based on staff count, preferences, and coverage goals</td></tr>
+        <tr><td class="label">Shift Swaps</td><td>Employees can request to swap shifts with available colleagues</td></tr>
+        <tr><td class="label">Analytics</td><td>Coverage analysis, utilization metrics, optimization reports</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-api">API: /scheduling/*</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12. PROJECTS                                                  -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="projects">
+  <div class="section-header">
+    <div class="section-number">Section 12</div>
+    <h2 class="section-title">Projects &amp; Tasks</h2>
+    <p class="section-desc">Organize work into projects with tasks that feed into timesheet tracking and presence activity.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #ede9fe;">&#128195;</div>
+      <div>
+        <h3>Project Management</h3>
+        <p>Create and organize work projects</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin</span></div>
+      <p>Projects are the top-level organizational unit for work. Each project has a unique code, description, assigned manager, and contains multiple tasks. Employees log timesheet entries against projects and tasks.</p>
+
+      <ol class="steps-list">
+        <li><strong>Go to Projects</strong> — Navigate to Admin → Projects.</li>
+        <li><strong>Create a Project</strong> — Enter name, code (e.g., "SAT-001"), description, and assign a manager.</li>
+        <li><strong>Add Tasks</strong> — Within each project, create tasks with unique codes and descriptions.</li>
+        <li><strong>Manage Status</strong> — Activate or deactivate projects and tasks as work progresses.</li>
+      </ol>
+
+      <div class="highlight-box highlight-info">
+        <strong>Integration:</strong> Projects and tasks flow into timesheets (time entry), presence (current activity), and dashboard (work tracking).
+      </div>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/projects</span>
+        <span class="route-badge route-api">API: /admin/projects</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 13. USERS                                                     -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="users">
+  <div class="section-header">
+    <div class="section-number">Section 13</div>
+    <h2 class="section-title">User Management</h2>
+    <p class="section-desc">Full employee lifecycle management including onboarding, role assignment, profile management, and status control.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dbeafe;">&#128101;</div>
+      <div>
+        <h3>User CRUD Operations</h3>
+        <p>Create, edit, and manage employee accounts</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+      </div>
+      <p>Administrators can create new user accounts, assign roles, set department and manager assignments, and manage account status. The system supports search, filtering by role/status, and pagination for large organizations.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Create User</td><td>Email, name, role, department, manager, designation, hourly rate</td></tr>
+        <tr><td class="label">Edit User</td><td>Update any profile field, change role, reassign manager</td></tr>
+        <tr><td class="label">Deactivate</td><td>Soft-disable accounts while preserving data</td></tr>
+        <tr><td class="label">Search &amp; Filter</td><td>Search by name/email, filter by role and status</td></tr>
+        <tr><td class="label">Profile</td><td>Every user can edit their own profile (name, phone, avatar)</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/users</span>
+        <span class="route-badge route-api">API: /users</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 14. REPORTS                                                   -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="reports">
+  <div class="section-header">
+    <div class="section-number">Section 14</div>
+    <h2 class="section-title">Reports &amp; Analytics</h2>
+    <p class="section-desc">Role-specific reporting dashboards with team metrics, attendance analytics, and workforce insights.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #ecfdf5;">&#128200;</div>
+      <div>
+        <h3>Reporting Hub</h3>
+        <p>Centralized analytics by role</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-all">All Roles</span></div>
+      <p>The reports section provides role-specific analytics. Managers see their team's performance metrics and direct report data. HR sees organization-wide compliance and workforce health indicators. All data can be filtered by date range.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Manager Reports</td><td>Team member metrics, attendance rates, overtime summary, direct report activity</td></tr>
+        <tr><td class="label">HR Reports</td><td>Organization metrics, compliance dashboards, attendance trends, leave utilization</td></tr>
+        <tr><td class="label">Admin Reports</td><td>Full platform analytics, cost analysis, workforce planning data</td></tr>
+        <tr><td class="label">Team Activity</td><td>Real-time view of who is online, current projects, work modes</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /reports</span>
+        <span class="route-badge route-web">Web: /reports/manager</span>
+        <span class="route-badge route-web">Web: /reports/hr</span>
+        <span class="route-badge route-web">Web: /admin/team-activity</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 15. NOTIFICATIONS                                             -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="notifications">
+  <div class="section-header">
+    <div class="section-number">Section 15</div>
+    <h2 class="section-title">Notifications</h2>
+    <p class="section-desc">Multi-channel notification system with push, email, SMS, and in-app alerts, plus granular user preference controls.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fef3c7;">&#128276;</div>
+      <div>
+        <h3>Notification System</h3>
+        <p>Stay informed across all channels</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-all">All Roles</span></div>
+      <p>The platform sends notifications for key events across multiple channels. Users can configure their notification preferences per channel type (push, email, SMS, in-app).</p>
+
+      <table class="kv-table">
+        <thead><tr><th>Event Category</th><th>Notification Types</th></tr></thead>
+        <tr><td class="label">Shifts</td><td>Assigned, Updated, Cancelled, Reminder, Swap Request</td></tr>
+        <tr><td class="label">Leave</td><td>Approved, Rejected, Reminder</td></tr>
+        <tr><td class="label">Timesheets</td><td>Due, Approved, Rejected</td></tr>
+        <tr><td class="label">Anomalies</td><td>Detected (admin notification)</td></tr>
+        <tr><td class="label">Expenses</td><td>Approved, Rejected</td></tr>
+        <tr><td class="label">Training</td><td>Assigned, Certification Expiring</td></tr>
+        <tr><td class="label">Chat</td><td>New Message, Presence Update</td></tr>
+        <tr><td class="label">System</td><td>Announcements, Overtime Alerts</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-api">API: /notifications</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 16. DOCUMENTS                                                 -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="documents">
+  <div class="section-header">
+    <div class="section-number">Section 16</div>
+    <h2 class="section-title">Documents &amp; Compliance</h2>
+    <p class="section-desc">Centralized document management with categorization, version tracking, and role-based access for contracts, policies, certificates, and more.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #dbeafe;">&#128196;</div>
+      <div>
+        <h3>Document Management</h3>
+        <p>Upload, organize, and retrieve employee documents</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+        <span class="access-tag tag-employee">Employee (own docs)</span>
+      </div>
+      <p>HR and SuperAdmin can upload and manage documents assigned to employees. Documents are categorized by type (Contract, Policy, Certificate, ID, Resume, Training, Report) and custom categories. Files are stored securely with presigned download URLs.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Upload</td><td>Upload files with metadata, type, category, and user assignment</td></tr>
+        <tr><td class="label">Download</td><td>Secure presigned URL generation for file retrieval</td></tr>
+        <tr><td class="label">Categories</td><td>Custom admin-defined categories for organization</td></tr>
+        <tr><td class="label">Statistics</td><td>Document count summaries by type and category</td></tr>
+        <tr><td class="label">Employee View</td><td>Employees see only their own assigned documents</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-api">API: /documents</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 17. EXPENSES                                                  -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="expenses">
+  <div class="section-header">
+    <div class="section-number">Section 17</div>
+    <h2 class="section-title">Expenses &amp; Reimbursement</h2>
+    <p class="section-desc">End-to-end expense tracking from submission through approval to reimbursement, with policy-based limits and receipt management.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #ecfdf5;">&#128176;</div>
+      <div>
+        <h3>Expense Workflow</h3>
+        <p>Submit, approve, and track reimbursements</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-all">All Roles</span>
+      </div>
+      <p>Employees submit expenses with receipts. Managers and HR review and approve. HR can mark expenses as reimbursed with reference numbers. Policies define per-category limits and receipt requirements.</p>
+
+      <table class="kv-table">
+        <tr><td class="label">Categories</td><td>Travel, Meals, Accommodation, Equipment, Software, Training, Office, Mileage, Other</td></tr>
+        <tr><td class="label">Statuses</td><td>Pending → Approved → Reimbursed (or Rejected)</td></tr>
+        <tr><td class="label">Policies</td><td>Category-specific limits, receipt thresholds, approval requirements</td></tr>
+        <tr><td class="label">Attachments</td><td>Receipt upload with expense submission</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-api">API: /expenses</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 18. TRAINING                                                  -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="training">
+  <div class="section-header">
+    <div class="section-number">Section 18</div>
+    <h2 class="section-title">Training &amp; Certifications</h2>
+    <p class="section-desc">Manage employee development programs, track certification compliance, and ensure workforce readiness with automated expiry alerts.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: #fce7f3;">&#127891;</div>
+      <div>
+        <h3>Training Programs</h3>
+        <p>Create and assign training to employees</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags">
+        <span class="access-tag tag-superadmin">SuperAdmin</span>
+        <span class="access-tag tag-hr">HR</span>
+        <span class="access-tag tag-manager">Manager</span>
+      </div>
+
+      <table class="kv-table">
+        <tr><td class="label">Create Training</td><td>Title, description, category, duration, required roles, recurrence</td></tr>
+        <tr><td class="label">Assign</td><td>Multi-user assignment with due dates</td></tr>
+        <tr><td class="label">Progress</td><td>Track completion percentage with status (Assigned → In Progress → Completed)</td></tr>
+        <tr><td class="label">Certifications</td><td>Award certifications, track validity periods, auto-expiry alerts</td></tr>
+        <tr><td class="label">Compliance</td><td>Reports on training completion rates and missing certifications</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-api">API: /training</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 19. AUDIT LOGS                                                -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="audit">
+  <div class="section-header">
+    <div class="section-number">Section 19</div>
+    <h2 class="section-title">Audit Logs</h2>
+    <p class="section-desc">Immutable activity trail recording every significant action in the system for compliance, security, and accountability.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: var(--silver-100);">&#128220;</div>
+      <div>
+        <h3>System Audit Trail</h3>
+        <p>Complete record of all administrative actions</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin</span></div>
+      <p>Every significant system action is logged with the actor, timestamp, action type, affected entity, and before/after state comparison. Logs are retained for 7 years (2555 days) by default and support filtering by action, entity type, and date range.</p>
+
+      <table class="kv-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tr><td class="label">Timestamp</td><td>Exact date and time of the action</td></tr>
+        <tr><td class="label">Actor</td><td>User who performed the action (name and email)</td></tr>
+        <tr><td class="label">Action</td><td>Type of action (PolicyUpdated, UserCreated, LeaveApproved, etc.)</td></tr>
+        <tr><td class="label">Entity Type</td><td>What was affected (User, WorkPolicy, GeofencePolicy, OfficeLocation, etc.)</td></tr>
+        <tr><td class="label">Before/After</td><td>State comparison showing exactly what changed</td></tr>
+        <tr><td class="label">IP &amp; User Agent</td><td>Network and device information for security tracking</td></tr>
+      </table>
+
+      <ol class="steps-list">
+        <li><strong>Navigate to Audit Logs</strong> — Go to Admin → Audit Logs (SuperAdmin only).</li>
+        <li><strong>Filter by Action or Entity</strong> — Use the dropdown filters to narrow results.</li>
+        <li><strong>Review Entries</strong> — Each row shows timestamp, actor, action, entity, and a truncated entity ID.</li>
+        <li><strong>Paginate</strong> — Use the page controls to browse through historical records.</li>
+      </ol>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/audit</span>
+        <span class="route-badge route-api">API: GET /admin/audit-logs</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 20. SETTINGS                                                  -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="settings">
+  <div class="section-header">
+    <div class="section-number">Section 20</div>
+    <h2 class="section-title">System Settings &amp; Policies</h2>
+    <p class="section-desc">Configure organization-wide work rules, geofence policies, data retention periods, and integration settings.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-header">
+      <div class="feature-icon" style="background: var(--silver-100);">&#9881;&#65039;</div>
+      <div>
+        <h3>Configuration Panel</h3>
+        <p>SuperAdmin-only system configuration</p>
+      </div>
+    </div>
+    <div class="feature-body">
+      <div class="access-tags"><span class="access-tag tag-superadmin">SuperAdmin Only</span></div>
+
+      <h4 style="margin-bottom: 8px; font-size: 15px; color: var(--navy-900);">Work Policies</h4>
+      <table class="kv-table">
+        <tr><td class="label">Standard Hours</td><td>Default: 8 hours per day</td></tr>
+        <tr><td class="label">Max Hours</td><td>Default: 12 hours per day</td></tr>
+        <tr><td class="label">Overtime Threshold</td><td>Default: 480 minutes (8 hours)</td></tr>
+        <tr><td class="label">Break Duration</td><td>Default: 15 minutes</td></tr>
+        <tr><td class="label">Lunch Duration</td><td>Default: 60 minutes</td></tr>
+        <tr><td class="label">Grace Period (Late)</td><td>Default: 15 minutes</td></tr>
+        <tr><td class="label">Grace Period (Early)</td><td>Default: 15 minutes</td></tr>
+      </table>
+
+      <h4 style="margin: 20px 0 8px; font-size: 15px; color: var(--navy-900);">Data Retention</h4>
+      <table class="kv-table">
+        <tr><td class="label">Chat Messages</td><td>365 days</td></tr>
+        <tr><td class="label">Attachments</td><td>365 days</td></tr>
+        <tr><td class="label">Anomalies</td><td>730 days (2 years)</td></tr>
+        <tr><td class="label">Audit Logs</td><td>2555 days (7 years)</td></tr>
+      </table>
+
+      <h4 style="margin: 20px 0 8px; font-size: 15px; color: var(--navy-900);">Geofence Settings</h4>
+      <table class="kv-table">
+        <tr><td class="label">Enable Geofence</td><td>Toggle geofence verification on/off</td></tr>
+        <tr><td class="label">Office Only</td><td>Require all check-ins within office boundaries</td></tr>
+        <tr><td class="label">Bypass with Reason</td><td>Allow check-in outside geofence with explanation</td></tr>
+      </table>
+
+      <div class="route-info">
+        <span class="route-badge route-web">Web: /admin/settings</span>
+        <span class="route-badge route-api">API: /admin/policies/*</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 21. TECHNICAL ARCHITECTURE                                    -->
+<!-- ============================================================ -->
+<div class="content-page page-break" id="tech">
+  <div class="section-header">
+    <div class="section-number">Section 21</div>
+    <h2 class="section-title">Technical Architecture</h2>
+    <p class="section-desc">Enterprise-grade stack built for reliability, security, and scalability.</p>
+  </div>
+
+  <div class="feature-section">
+    <div class="feature-body">
+      <h4 style="margin-bottom: 12px; font-size: 15px; color: var(--navy-900);">Technology Stack</h4>
+      <table class="kv-table">
+        <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+        <tr><td class="label">Web Frontend</td><td>Next.js 14 (App Router), React 18, Tailwind CSS</td><td>Server-rendered web app with modern UI</td></tr>
+        <tr><td class="label">Mobile</td><td>React Native, Expo SDK 52, Expo Router</td><td>Cross-platform iOS/Android app</td></tr>
+        <tr><td class="label">API Server</td><td>NestJS, TypeScript, Prisma ORM</td><td>RESTful API with RBAC middleware</td></tr>
+        <tr><td class="label">Database</td><td>PostgreSQL 16</td><td>Primary relational data store</td></tr>
+        <tr><td class="label">Cache / PubSub</td><td>Redis 7</td><td>Session cache, real-time messaging</td></tr>
+        <tr><td class="label">File Storage</td><td>MinIO (S3-compatible)</td><td>Document and attachment storage</td></tr>
+        <tr><td class="label">Real-Time</td><td>Socket.IO</td><td>Live chat, presence, notifications</td></tr>
+        <tr><td class="label">Reverse Proxy</td><td>Nginx</td><td>Load balancing, SSL termination</td></tr>
+        <tr><td class="label">Containerization</td><td>Docker Compose</td><td>Multi-service orchestration</td></tr>
+      </table>
+
+      <h4 style="margin: 24px 0 12px; font-size: 15px; color: var(--navy-900);">Security Features</h4>
+      <table class="kv-table">
+        <tr><td class="label">Authentication</td><td>JWT with refresh token rotation, OTP device verification</td></tr>
+        <tr><td class="label">Authorization</td><td>Role-based access control (RBAC) with 4-tier hierarchy</td></tr>
+        <tr><td class="label">API Security</td><td>Rate limiting, request throttling, input validation</td></tr>
+        <tr><td class="label">Data Security</td><td>Encrypted passwords (bcrypt), presigned URLs for files</td></tr>
+        <tr><td class="label">Audit</td><td>Comprehensive logging with 7-year retention</td></tr>
+        <tr><td class="label">Geofence</td><td>GPS verification with configurable bypass policies</td></tr>
+      </table>
+
+      <h4 style="margin: 24px 0 12px; font-size: 15px; color: var(--navy-900);">Deployment</h4>
+      <table class="kv-table">
+        <tr><td class="label">Local Development</td><td>Docker Compose with hot-reload for all services</td></tr>
+        <tr><td class="label">Production</td><td>Multi-stage Docker builds with Nginx reverse proxy</td></tr>
+        <tr><td class="label">Database</td><td>Prisma migrations with seed data for demo environment</td></tr>
+        <tr><td class="label">Health Checks</td><td>All containers include health check endpoints</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div style="text-align: center; padding: 40px 0; color: var(--silver-500);">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--blue-500); border-radius: 12px; margin-bottom: 16px;">
+      <span style="font-size: 24px; font-weight: 800; color: white;">S</span>
+    </div>
+    <p style="font-size: 16px; font-weight: 600; color: var(--navy-900); margin-bottom: 4px;">Satcom Workforce</p>
+    <p style="font-size: 13px;">Version 1.0 &middot; February 2026 &middot; Confidential</p>
+    <p style="font-size: 12px; margin-top: 12px; color: var(--silver-300);">This document is proprietary and confidential. &copy; 2026 Satcom Communications.</p>
+  </div>
+</div>
+
+</body>
+</html>

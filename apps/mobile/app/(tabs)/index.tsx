@@ -33,6 +33,7 @@ import type { WorkMode, BreakType, CheckOutSummary } from '../../src/hooks/useAt
 import type { ActivityItem } from '../../src/hooks/useRecentActivity';
 import { AttendanceCard, CheckInModal } from '../../src/components/attendance';
 import { format, isToday, isYesterday } from 'date-fns';
+import { UserRole } from '@satcom/shared';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -40,6 +41,10 @@ export default function HomeScreen() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const unreadCount = useTotalUnreadCount();
+
+  // SuperAdmin and HR do not have check-in functionality
+  const userRole = user?.role as UserRole | undefined;
+  const showCheckIn = userRole !== UserRole.SuperAdmin && userRole !== UserRole.HR;
 
   // Real attendance data from API
   const {
@@ -198,26 +203,30 @@ export default function HomeScreen() {
         </Text>
       </Animated.View>
 
-      {/* Attendance Card */}
-      <Animated.View entering={FadeInDown.duration(300).delay(200)}>
-        <AttendanceCard
-          attendance={attendance}
-          isLoading={isLoading}
-          isActionLoading={isActionLoading}
-          onCheckIn={() => setShowCheckInModal(true)}
-          onCheckOut={handleCheckOut}
-          onBreak={handleBreak}
-          onEndBreak={handleEndBreak}
-        />
-      </Animated.View>
+      {/* Attendance Card - only for Manager/Employee roles */}
+      {showCheckIn && (
+        <Animated.View entering={FadeInDown.duration(300).delay(200)}>
+          <AttendanceCard
+            attendance={attendance}
+            isLoading={isLoading}
+            isActionLoading={isActionLoading}
+            onCheckIn={() => setShowCheckInModal(true)}
+            onCheckOut={handleCheckOut}
+            onBreak={handleBreak}
+            onEndBreak={handleEndBreak}
+          />
+        </Animated.View>
+      )}
 
       {/* Check-in Modal */}
-      <CheckInModal
-        visible={showCheckInModal}
-        onClose={() => setShowCheckInModal(false)}
-        onCheckIn={handleCheckIn}
-        isLoading={isActionLoading}
-      />
+      {showCheckIn && (
+        <CheckInModal
+          visible={showCheckInModal}
+          onClose={() => setShowCheckInModal(false)}
+          onCheckIn={handleCheckIn}
+          isLoading={isActionLoading}
+        />
+      )}
 
       {/* Quick Actions Grid */}
       <Animated.View
@@ -232,7 +241,7 @@ export default function HomeScreen() {
           <Text style={styles.actionSubtitle}>Log time</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionCard}>
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/leave')}>
           <View style={[styles.actionIcon, { backgroundColor: '#F3E8FF' }]}>
             <Calendar size={20} color="#9333EA" />
           </View>
@@ -250,7 +259,16 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/chat')}>
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => {
+            try {
+              router.push('/chat');
+            } catch (err) {
+              Alert.alert('Navigation Error', String(err));
+            }
+          }}
+        >
           <View style={[styles.actionIcon, { backgroundColor: '#FED7AA' }]}>
             <MessageSquare size={20} color="#EA580C" />
           </View>

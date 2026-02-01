@@ -53,9 +53,9 @@ export default function AnomaliesPage() {
         if (statusFilter) url += `&status=${statusFilter}`;
         if (severityFilter) url += `&severity=${severityFilter}`;
 
-        const response = await api.get<AnomalyResponse>(url);
-        if (response.success && response.data) {
-          setAnomalies(response.data.data || []);
+        const response = await api.get<any>(url);
+        if (response.success) {
+          setAnomalies(response.data || []);
         }
       } catch (error) {
         console.error('Failed to fetch anomalies:', error);

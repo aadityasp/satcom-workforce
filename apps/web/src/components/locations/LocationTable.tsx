@@ -92,8 +92,8 @@ export function LocationTable({
     }
   }, [deleteTarget, onDelete]);
 
-  const formatCoordinates = (lat: number, lon: number): string => {
-    return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  const formatCoordinates = (lat: number | string, lon: number | string): string => {
+    return `${Number(lat).toFixed(6)}, ${Number(lon).toFixed(6)}`;
   };
 
   const truncateAddress = (address: string, maxLength = 40): string => {

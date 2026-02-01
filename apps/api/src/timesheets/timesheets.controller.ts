@@ -51,10 +51,14 @@ export class TimesheetsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
+    // Default to last 30 days if no dates provided
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const result = await this.timesheetsService.findAll(user.id, {
       projectId,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: start,
+      endDate: end,
       page,
       limit,
     });
@@ -68,10 +72,13 @@ export class TimesheetsController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ) {
+    const summaryEnd = endDate ? new Date(endDate) : new Date();
+    const summaryStart = startDate ? new Date(startDate) : new Date(summaryEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const result = await this.timesheetsService.getSummary(
       user.id,
-      new Date(startDate),
-      new Date(endDate),
+      summaryStart,
+      summaryEnd,
     );
     return { success: true, data: result };
   }

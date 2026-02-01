@@ -54,10 +54,10 @@ export default function AdminAuditPage() {
         if (actionFilter) url += `&action=${actionFilter}`;
         if (entityFilter) url += `&entityType=${entityFilter}`;
 
-        const response = await api.get<AuditResponse>(url);
-        if (response.success && response.data) {
-          setLogs(response.data.data || []);
-          setTotalPages(response.data.meta?.totalPages || 1);
+        const response = await api.get<any>(url);
+        if (response.success) {
+          setLogs(response.data || []);
+          setTotalPages((response as any).meta?.totalPages || 1);
         }
       } catch (error) {
         console.error('Failed to fetch audit logs:', error);

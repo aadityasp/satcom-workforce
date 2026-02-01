@@ -30,6 +30,10 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source code
 COPY . .
 
+# Set build-time env vars (NEXT_PUBLIC_* are inlined at build time)
+ARG NEXT_PUBLIC_API_URL=http://localhost:3003/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the application
 RUN cd apps/web && npm run build
 

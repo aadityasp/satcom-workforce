@@ -6,7 +6,7 @@
 
 import { useAuthStore } from '@/store/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003/api/v1';
 
 // Auth API types
 export interface LoginRequest {

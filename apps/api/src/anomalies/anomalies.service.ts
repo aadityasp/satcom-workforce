@@ -17,7 +17,9 @@ export class AnomaliesService {
     page?: number;
     limit?: number;
   }) {
-    const { userId, status, type, severity, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { userId, status, type, severity } = options;
     const where: any = { user: { companyId } };
 
     if (userId) where.userId = userId;

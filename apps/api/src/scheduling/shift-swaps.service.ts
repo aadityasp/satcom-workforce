@@ -431,7 +431,9 @@ export class ShiftSwapsService {
       limit?: number;
     }
   ) {
-    const { status, userId, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { status, userId } = options;
 
     const where: any = {
       shift: { companyId },

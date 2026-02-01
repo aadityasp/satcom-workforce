@@ -67,7 +67,7 @@ interface PresenceState {
   clearStatus: () => void;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3003/api/v1';
 // Socket.IO needs the base URL without /api/v1 path
 const SOCKET_URL = API_URL.replace(/\/api\/v\d+$/, '');
 

@@ -102,7 +102,9 @@ export class UsersService {
       search?: string;
     },
   ) {
-    const { page = 1, limit = 20, role, status, search } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 50;
+    const { role, status, search } = options;
     const skip = (page - 1) * limit;
 
     const where: any = { companyId };
@@ -136,7 +138,7 @@ export class UsersService {
     ]);
 
     return {
-      data: users.map(this.sanitizeUser),
+      data: users.map((user) => this.sanitizeUser(user)),
       meta: {
         page,
         limit,

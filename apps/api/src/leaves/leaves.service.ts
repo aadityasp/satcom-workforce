@@ -24,8 +24,17 @@ export class LeavesService {
   }
 
   async createRequest(userId: string, data: { leaveTypeId: string; startDate: string; endDate: string; reason: string }) {
+    if (!data.leaveTypeId || !data.startDate || !data.endDate) {
+      throw new BadRequestException('leaveTypeId, startDate, and endDate are required');
+    }
+
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Invalid date format for startDate or endDate');
+    }
+
     const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     // Check for overlapping requests
@@ -89,7 +98,9 @@ export class LeavesService {
   }
 
   async getRequests(userId: string, options: { status?: LeaveRequestStatus; page?: number; limit?: number }) {
-    const { status, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { status } = options;
     const where: any = { userId };
     if (status) where.status = status;
 

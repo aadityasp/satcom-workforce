@@ -365,7 +365,9 @@ export class AttendanceService {
       limit?: number;
     },
   ) {
-    const { startDate, endDate, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { startDate, endDate } = options;
     const skip = (page - 1) * limit;
 
     const [days, total] = await Promise.all([
@@ -717,19 +719,29 @@ export class AttendanceService {
 
     if (!day) return;
 
-    const checkIn = day.events.find(
-      (e) => e.type === AttendanceEventType.CheckIn,
-    );
-    const checkOut = day.events.find(
-      (e) => e.type === AttendanceEventType.CheckOut,
+    // Sort events by timestamp ascending
+    const sortedEvents = [...day.events].sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
     );
 
-    if (!checkIn || !checkOut) return;
+    // Pair check-ins with their corresponding check-outs and sum all sessions
+    let totalMinutes = 0;
+    const checkIns = sortedEvents.filter((e) => e.type === AttendanceEventType.CheckIn);
+    const checkOuts = sortedEvents.filter((e) => e.type === AttendanceEventType.CheckOut);
 
-    // Calculate work time
-    const totalMinutes = Math.round(
-      (checkOut.timestamp.getTime() - checkIn.timestamp.getTime()) / 60000,
-    );
+    for (const ci of checkIns) {
+      // Find the first check-out after this check-in
+      const co = checkOuts.find((e) => e.timestamp.getTime() > ci.timestamp.getTime());
+      if (co) {
+        totalMinutes += Math.round(
+          (co.timestamp.getTime() - ci.timestamp.getTime()) / 60000,
+        );
+        // Remove this check-out so it's not paired again
+        checkOuts.splice(checkOuts.indexOf(co), 1);
+      }
+    }
+
+    if (totalMinutes === 0 && checkIns.length === 0) return;
 
     // Calculate break totals
     const breakMinutes = day.breaks
@@ -740,7 +752,7 @@ export class AttendanceService {
       .filter((b) => b.type === BreakType.Lunch)
       .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
 
-    const workMinutes = totalMinutes - breakMinutes - lunchMinutes;
+    const workMinutes = Math.max(0, totalMinutes - breakMinutes - lunchMinutes);
 
     // Calculate overtime
     const policy = day.user.company.workPolicy;

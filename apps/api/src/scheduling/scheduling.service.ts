@@ -388,6 +388,8 @@ export class SchedulingService {
       limit?: number;
     }
   ) {
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 50;
     const { 
       startDate, 
       endDate, 
@@ -395,8 +397,6 @@ export class SchedulingService {
       departmentId, 
       locationId, 
       status,
-      page = 1, 
-      limit = 50 
     } = options;
 
     const where: any = {

@@ -359,7 +359,9 @@ export class NotificationsService {
       limit?: number;
     }
   ) {
-    const { unreadOnly, page = 1, limit = 20 } = options;
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 20;
+    const { unreadOnly } = options;
 
     const where: any = { userId };
     if (unreadOnly) where.isRead = false;

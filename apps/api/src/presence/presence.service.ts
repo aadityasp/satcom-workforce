@@ -180,25 +180,28 @@ export class PresenceService {
     status?: PresenceStatus;
     department?: string;
   }) {
-    const sessions = await this.prisma.presenceSession.findMany({
+    // First, fetch ALL users with their profiles
+    const users = await this.prisma.user.findMany({
       where: {
-        user: {
-          companyId,
-          ...(filters?.department && {
-            profile: { department: filters.department },
-          }),
-        },
+        companyId,
+        isActive: true,
+        ...(filters?.department && {
+          profile: { department: filters.department },
+        }),
       },
       include: {
-        user: {
-          include: { profile: true },
-        },
+        profile: true,
+        presenceSession: true,
       },
     });
 
-    // Get all unique project and task IDs
-    const projectIds = sessions.map(s => s.currentProjectId).filter(Boolean) as string[];
-    const taskIds = sessions.map(s => s.currentTaskId).filter(Boolean) as string[];
+    // Get all unique project and task IDs from presence sessions
+    const projectIds = users
+      .map(u => u.presenceSession?.currentProjectId)
+      .filter(Boolean) as string[];
+    const taskIds = users
+      .map(u => u.presenceSession?.currentTaskId)
+      .filter(Boolean) as string[];
 
     // Fetch project and task names
     const [projects, tasks] = await Promise.all([
@@ -220,35 +223,41 @@ export class PresenceService {
     const taskMap = new Map(tasks.map(t => [t.id, t]));
 
     const now = Date.now();
-    let result = sessions.map((s) => {
-      const elapsed = now - s.lastSeenAt.getTime();
-      let status: PresenceStatus;
-      if (elapsed < this.ONLINE_THRESHOLD) {
-        status = PresenceStatus.Online;
-      } else if (elapsed < this.AWAY_THRESHOLD) {
-        status = PresenceStatus.Away;
-      } else {
-        status = PresenceStatus.Offline;
+    let result = users.map((user) => {
+      const session = user.presenceSession;
+      let status: PresenceStatus = PresenceStatus.Offline;
+      let lastSeenAt: Date | null = null;
+
+      if (session) {
+        const elapsed = now - session.lastSeenAt.getTime();
+        if (elapsed < this.ONLINE_THRESHOLD) {
+          status = PresenceStatus.Online;
+        } else if (elapsed < this.AWAY_THRESHOLD) {
+          status = PresenceStatus.Away;
+        } else {
+          status = PresenceStatus.Offline;
+        }
+        lastSeenAt = session.lastSeenAt;
       }
 
-      const project = s.currentProjectId ? projectMap.get(s.currentProjectId) : null;
-      const task = s.currentTaskId ? taskMap.get(s.currentTaskId) : null;
+      const project = session?.currentProjectId ? projectMap.get(session.currentProjectId) : null;
+      const task = session?.currentTaskId ? taskMap.get(session.currentTaskId) : null;
 
       return {
-        userId: s.userId,
+        userId: user.id,
         status,
-        lastSeenAt: s.lastSeenAt,
-        currentWorkMode: s.currentWorkMode,
-        statusMessage: s.statusMessage,
-        statusUpdatedAt: s.statusUpdatedAt,
+        lastSeenAt,
+        currentWorkMode: session?.currentWorkMode ?? null,
+        statusMessage: session?.statusMessage ?? null,
+        statusUpdatedAt: session?.statusUpdatedAt ?? null,
         currentProject: project ? { id: project.id, name: project.name, code: project.code } : null,
         currentTask: task ? { id: task.id, name: task.name, code: task.code } : null,
-        profile: s.user.profile ? {
-          firstName: s.user.profile.firstName,
-          lastName: s.user.profile.lastName,
-          designation: s.user.profile.designation,
-          department: s.user.profile.department,
-          avatarUrl: s.user.profile.avatarUrl,
+        profile: user.profile ? {
+          firstName: user.profile.firstName,
+          lastName: user.profile.lastName,
+          designation: user.profile.designation,
+          department: user.profile.department,
+          avatarUrl: user.profile.avatarUrl,
         } : null,
       };
     });

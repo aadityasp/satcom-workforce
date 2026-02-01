@@ -117,12 +117,12 @@ export function useTimesheets(date?: string): UseTimesheetsReturn {
 
     try {
       // Fetch entries for the single date (startDate = endDate)
-      const response = await api.get<{ data: TimesheetEntry[]; meta: unknown }>(
+      const response = await api.get<TimesheetEntry[]>(
         `/timesheets?startDate=${targetDate}&endDate=${targetDate}`
       );
 
       if (response.success && response.data) {
-        setEntries(response.data.data || []);
+        setEntries(Array.isArray(response.data) ? response.data : []);
       } else {
         setError(response.error?.message || 'Failed to load entries');
         setEntries([]);

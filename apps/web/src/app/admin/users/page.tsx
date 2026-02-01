@@ -53,11 +53,12 @@ export default function UsersPage() {
         if (search) url += `&search=${encodeURIComponent(search)}`;
         if (roleFilter) url += `&role=${roleFilter}`;
 
-        const response = await api.get<UsersResponse>(url);
-        if (response.success && response.data) {
-          setUsers(response.data.data || []);
-          setTotalPages(response.data.meta?.totalPages || 1);
-          setTotal(response.data.meta?.total || 0);
+        const response = await api.get<any>(url);
+        if (response.success) {
+          // API returns { success, data: [...users], meta: {...} }
+          setUsers(response.data || []);
+          setTotalPages((response as any).meta?.totalPages || 1);
+          setTotal((response as any).meta?.total || 0);
         }
       } catch (error) {
         console.error('Failed to fetch users:', error);

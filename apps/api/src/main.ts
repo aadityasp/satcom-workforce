@@ -27,8 +27,9 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       ...corsOrigins,
-      'http://localhost:8081', // Expo dev
-      'exp://localhost:8081',  // Expo dev
+      'http://localhost',       // nginx on port 80
+      'http://localhost:8081',  // Expo dev
+      'exp://localhost:8081',   // Expo dev
     ],
     credentials: true,
   });
