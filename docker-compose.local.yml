@@ -1,0 +1,23 @@
+# ============================================
+# Satcom Workforce - Local Override
+# ============================================
+# Usage: docker compose -f docker-compose.prod.yml -f docker-compose.local.yml up -d
+#
+# Overrides:
+#   - Nginx uses local config (no SSL)
+#   - Removes SSL volume mount
+#   - Disables backup cron (optional)
+
+version: '3.8'
+
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+
+  backup:
+    profiles:
+      - backup

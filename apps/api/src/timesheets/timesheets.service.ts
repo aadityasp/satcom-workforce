@@ -209,11 +209,12 @@ export class TimesheetsService {
     if (updateDto.startTime && updateDto.endTime) {
       const startTime = new Date(updateDto.startTime);
       const endTime = new Date(updateDto.endTime);
-      minutes = differenceInMinutes(endTime, startTime);
+      const diff = differenceInMinutes(endTime, startTime);
 
-      if (minutes <= 0) {
+      if (diff <= 0) {
         throw new BadRequestException('End time must be after start time');
       }
+      minutes = diff;
     }
 
     // Validate daily total if minutes changed
