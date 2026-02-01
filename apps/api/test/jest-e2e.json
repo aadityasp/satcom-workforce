@@ -1,0 +1,19 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@satcom/shared(.*)$": "<rootDir>/../../packages/shared/src$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
+  "coverageDirectory": "./coverage-e2e",
+  "collectCoverageFrom": [
+    "../src/**/*.ts",
+    "!../src/**/*.spec.ts",
+    "!../src/**/*.d.ts"
+  ]
+}

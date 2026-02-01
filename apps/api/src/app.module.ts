@@ -24,6 +24,13 @@ import { StorageModule } from './storage/storage.module';
 import { ProjectsModule } from './projects/projects.module';
 import { LocationsModule } from './locations/locations.module';
 import { ReportsModule } from './reports/reports.module';
+import { SchedulingModule } from './scheduling/scheduling.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PayrollModule } from './payroll/payroll.module';
+import { DocumentsModule } from './documents/documents.module';
+import { TrainingModule } from './training/training.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 
 @Module({
   imports: [
@@ -75,6 +82,13 @@ import { ReportsModule } from './reports/reports.module';
     ProjectsModule,
     LocationsModule,
     ReportsModule,
+    SchedulingModule,
+    NotificationsModule,
+    PayrollModule,
+    DocumentsModule,
+    TrainingModule,
+    ExpensesModule,
+    IntegrationsModule,
   ],
 })
 export class AppModule {}

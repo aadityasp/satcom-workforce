@@ -127,6 +127,115 @@ enum TimesheetStatus {
   Rejected
 }
 
+enum DocumentType {
+  Contract
+  Policy
+  Certificate
+  ID
+  Resume
+  Training
+  Report
+  Other
+}
+
+enum ExpenseStatus {
+  Pending
+  Approved
+  Rejected
+  Reimbursed
+}
+
+enum ExpenseCategory {
+  Travel
+  Meals
+  Accommodation
+  Equipment
+  Software
+  Training
+  Office
+  Mileage
+  Other
+}
+
+enum IntegrationType {
+  QuickBooks
+  Salesforce
+  Slack
+  GoogleCalendar
+  ADP
+  BambooHR
+  Gusto
+  Zapier
+}
+
+enum IntegrationStatus {
+  Pending
+  Active
+  Failed
+  Inactive
+}
+
+enum NotificationType {
+  ShiftAssigned
+  ShiftUpdated
+  ShiftCancelled
+  ShiftReminder
+  ShiftSwapRequest
+  TimeOffApproved
+  TimeOffRejected
+  TimeOffReminder
+  TimesheetDue
+  TimesheetApproved
+  TimesheetRejected
+  OvertimeAlert
+  AnomalyDetected
+  Announcement
+  ChatMessage
+  PresenceUpdate
+  ExpenseApproved
+  ExpenseRejected
+  TrainingAssigned
+  CertificationExpiring
+  System
+}
+
+enum NotificationChannel {
+  Push
+  Email
+  Sms
+  InApp
+}
+
+enum ShiftStatus {
+  Scheduled
+  InProgress
+  Completed
+  Cancelled
+  OnHold
+}
+
+enum ShiftSwapStatus {
+  Pending
+  Accepted
+  Rejected
+  Cancelled
+}
+
+enum TrainingStatus {
+  Assigned
+  InProgress
+  Completed
+  Expired
+  NotStarted
+}
+
+enum CertificationStatus {
+  Active
+  Expired
+  Revoked
+  Pending
+}
+
 // =============================================================================
 // COMPANY & USER MODELS
 // =============================================================================
@@ -151,6 +260,14 @@ model Company {
   retentionPolicy RetentionPolicy?
   geofencePolicy  GeofencePolicy?
   anomalyRules    AnomalyRule[]
+  departments         Department[]
+  integrations        Integration[]
+  webhooks            Webhook[]
+  documentCategories  DocumentCategory[]
+  expensePolicies     ExpensePolicy[]
+  trainings           Training[]
+  trainingCategories  TrainingCategory[]
+  certifications      Certification[]
 
   @@map("companies")
 }
@@ -192,6 +309,22 @@ model User {
   managedProjects       Project[]            @relation("ProjectManager")
   managedEmployees      EmployeeProfile[]    @relation("EmployeeManager")
   activityLogs          ActivityLog[]
+  shifts                Shift[]
+  shiftSwapRequests     ShiftSwapRequest[]    @relation("SwapRequester")
+  shiftSwapReceived     ShiftSwapRequest[]    @relation("SwapReceiver")
+  shiftSwapApprovals    ShiftSwapRequest[]    @relation("SwapApprover")
+  notifications         Notification[]
+  pushTokens            PushToken[]
+  notificationPrefs     NotificationPreference[]
+  documents             Document[]            @relation("DocumentOwner")
+  uploadedDocuments     Document[]            @relation("DocumentUploader")
+  expenses              Expense[]             @relation("ExpenseOwner")
+  approvedExpenses      Expense[]             @relation("ExpenseApprover")
+  trainingAssignments   TrainingAssignment[]  @relation("TrainingAssignee")
+  assignedTrainings     TrainingAssignment[]  @relation("TrainingAssigner")
+  userCertifications    UserCertification[]   @relation("CertificationHolder")
+  awardedCertifications UserCertification[]   @relation("CertificationAwarder")
+  availability          UserAvailability[]
 
   @@index([companyId])
   @@index([email])
@@ -212,6 +345,10 @@ model EmployeeProfile {
   managerId    String?
   avatarUrl    String?
   joinDate     DateTime
+  hourlyRate           Decimal?       @db.Decimal(10, 2)
+  preferredWeeklyHours Int?
+  maxWeeklyHours       Int?
+  seniorityLevel       String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -299,6 +436,7 @@ model Project {
   timesheetEntries TimesheetEntry[]
   chatThreads      ChatThread[]
   activityLogs     ActivityLog[]
+  expenses         Expense[]
 
   @@index([companyId])
   @@index([code])
@@ -702,7 +840,9 @@ model OfficeLocation {
   updatedAt    DateTime @updatedAt
 
   // Relations
-  company Company @relation(fields: [companyId], references: [id])
+  company        Company         @relation(fields: [companyId], references: [id])
+  shifts         Shift[]
+  shiftTemplates ShiftTemplate[]
 
   @@index([companyId])
   @@map("office_locations")
@@ -854,4 +994,439 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// =============================================================================
+// SCHEDULING MODELS
+// =============================================================================
+
+model Department {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company        Company         @relation(fields: [companyId], references: [id])
+  shifts         Shift[]
+  shiftTemplates ShiftTemplate[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("departments")
+}
+
+model Shift {
+  id            String      @id @default(uuid())
+  userId        String
+  companyId     String
+  startTime     DateTime
+  endTime       DateTime
+  status        ShiftStatus @default(Scheduled)
+  locationId    String?
+  departmentId  String?
+  notes         String?
+  breakDuration Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id])
+  location   OfficeLocation? @relation(fields: [locationId], references: [id])
+  department Department?     @relation(fields: [departmentId], references: [id])
+  swapRequests ShiftSwapRequest[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([startTime, endTime])
+  @@map("shifts")
+}
+
+model ShiftTemplate {
+  id            String   @id @default(uuid())
+  companyId     String
+  name          String
+  startTime     String
+  endTime       String
+  breakDuration Int      @default(0)
+  departmentId  String?
+  locationId    String?
+  daysOfWeek    Int[]
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  department Department?     @relation(fields: [departmentId], references: [id])
+  location   OfficeLocation? @relation(fields: [locationId], references: [id])
+
+  @@index([companyId])
+  @@map("shift_templates")
+}
+
+model ShiftSwapRequest {
+  id              String          @id @default(uuid())
+  shiftId         String
+  requestedById   String
+  requestedToId   String
+  status          ShiftSwapStatus @default(Pending)
+  reason          String?
+  respondedAt     DateTime?
+  respondReason   String?
+  approvedById    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  shift       Shift @relation(fields: [shiftId], references: [id])
+  requestedBy User  @relation("SwapRequester", fields: [requestedById], references: [id])
+  requestedTo User  @relation("SwapReceiver", fields: [requestedToId], references: [id])
+  approvedBy  User? @relation("SwapApprover", fields: [approvedById], references: [id])
+
+  @@index([shiftId])
+  @@index([requestedById])
+  @@index([requestedToId])
+  @@map("shift_swap_requests")
+}
+
+model UserAvailability {
+  id          String  @id @default(uuid())
+  userId      String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isPreferred Boolean @default(false)
+  isAvailable Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_availability")
+}
+
+// =============================================================================
+// NOTIFICATION MODELS
+// =============================================================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  priority  String           @default("normal")
+  actionUrl String?
+  imageUrl  String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String
+  platform  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model NotificationPreference {
+  id      String              @id @default(uuid())
+  userId  String
+  channel NotificationChannel
+  enabled Boolean             @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+// =============================================================================
+// DOCUMENT MODELS
+// =============================================================================
+
+model DocumentCategory {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  documents Document[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("document_categories")
+}
+
+model Document {
+  id             String       @id @default(uuid())
+  companyId      String
+  title          String
+  description    String?
+  type           DocumentType
+  categoryId     String?
+  userId         String
+  fileUrl        String
+  fileName       String
+  fileSize       Int
+  fileType       String
+  uploadedBy     String
+  expiresAt      DateTime?
+  isConfidential Boolean      @default(false)
+  version        Int          @default(1)
+  updatedBy      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  category       DocumentCategory? @relation(fields: [categoryId], references: [id])
+  user           User              @relation("DocumentOwner", fields: [userId], references: [id])
+  uploadedByUser User              @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([type])
+  @@map("documents")
+}
+
+// =============================================================================
+// EXPENSE MODELS
+// =============================================================================
+
+model Expense {
+  id                     String          @id @default(uuid())
+  userId                 String
+  companyId              String
+  category               ExpenseCategory
+  amount                 Decimal         @db.Decimal(10, 2)
+  currency               String          @default("USD")
+  date                   DateTime        @db.Date
+  description            String
+  receiptUrl             String?
+  projectId              String?
+  mileage                Decimal?        @db.Decimal(10, 2)
+  status                 ExpenseStatus   @default(Pending)
+  approvedBy             String?
+  approvedAt             DateTime?
+  approvalNotes          String?
+  rejectionReason        String?
+  reimbursedAt           DateTime?
+  reimbursementMethod    String?
+  reimbursementReference String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  user           User     @relation("ExpenseOwner", fields: [userId], references: [id])
+  approvedByUser User?    @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  project        Project? @relation(fields: [projectId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@map("expenses")
+}
+
+model ExpensePolicy {
+  id               String          @id @default(uuid())
+  companyId        String
+  category         ExpenseCategory
+  maxAmount        Decimal         @db.Decimal(10, 2)
+  requiresReceipt  Boolean         @default(true)
+  receiptThreshold Decimal?        @db.Decimal(10, 2)
+  notes            String?
+  createdBy        String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, category])
+  @@index([companyId])
+  @@map("expense_policies")
+}
+
+// =============================================================================
+// INTEGRATION MODELS
+// =============================================================================
+
+model Integration {
+  id           String            @id @default(uuid())
+  companyId    String
+  type         IntegrationType
+  name         String
+  config       Json              @default("{}")
+  status       IntegrationStatus @default(Pending)
+  errorMessage String?
+  lastSyncAt   DateTime?
+  createdBy    String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@map("integrations")
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  companyId String
+  url       String
+  events    String[]
+  secret    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company    Company            @relation(fields: [companyId], references: [id])
+  deliveries WebhookDelivery[]
+
+  @@index([companyId])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id           String   @id @default(uuid())
+  webhookId    String
+  eventId      String?
+  eventType    String
+  payload      Json
+  statusCode   Int?
+  success      Boolean
+  responseBody String?
+  createdAt    DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@map("webhook_deliveries")
+}
+
+// =============================================================================
+// TRAINING MODELS
+// =============================================================================
+
+model TrainingCategory {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  trainings Training[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("training_categories")
+}
+
+model Training {
+  id               String   @id @default(uuid())
+  companyId        String
+  title            String
+  description      String?
+  categoryId       String?
+  duration         Int?
+  requiredForRoles String[]
+  recurrenceMonths Int?
+  createdBy        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company        Company            @relation(fields: [companyId], references: [id])
+  category       TrainingCategory?  @relation(fields: [categoryId], references: [id])
+  assignments    TrainingAssignment[]
+  certifications Certification[]
+
+  @@index([companyId])
+  @@map("trainings")
+}
+
+model TrainingAssignment {
+  id          String         @id @default(uuid())
+  trainingId  String
+  userId      String
+  status      TrainingStatus @default(Assigned)
+  assignedBy  String?
+  dueDate     DateTime?
+  progress    Int            @default(0)
+  completedAt DateTime?
+  notes       String?
+  assignedAt  DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  training   Training @relation(fields: [trainingId], references: [id])
+  user       User     @relation("TrainingAssignee", fields: [userId], references: [id])
+  assigner   User?    @relation("TrainingAssigner", fields: [assignedBy], references: [id])
+
+  @@index([trainingId])
+  @@index([userId])
+  @@index([status])
+  @@map("training_assignments")
+}
+
+model Certification {
+  id                 String   @id @default(uuid())
+  companyId          String
+  name               String
+  description        String?
+  issuingBody        String?
+  validityMonths     Int?
+  requiredTrainingId String?
+  createdBy          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company            Company             @relation(fields: [companyId], references: [id])
+  requiredTraining   Training?           @relation(fields: [requiredTrainingId], references: [id])
+  userCertifications UserCertification[]
+
+  @@index([companyId])
+  @@map("certifications")
+}
+
+model UserCertification {
+  id              String              @id @default(uuid())
+  certificationId String
+  userId          String
+  issuedDate      DateTime
+  expiryDate      DateTime?
+  certificateUrl  String?
+  status          CertificationStatus @default(Active)
+  awardedBy       String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  certification Certification @relation(fields: [certificationId], references: [id])
+  user          User          @relation("CertificationHolder", fields: [userId], references: [id])
+  awarder       User?         @relation("CertificationAwarder", fields: [awardedBy], references: [id])
+
+  @@index([certificationId])
+  @@index([userId])
+  @@map("user_certifications")
 }
