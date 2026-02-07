@@ -47,7 +47,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Satcom Workforce to use your location for office check-in."
         }
-      ]
+      ],
+      "react-native-reanimated"
     ],
     "experiments": {
       "typedRoutes": true

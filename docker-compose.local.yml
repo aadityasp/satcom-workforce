@@ -8,8 +8,6 @@
 #   - Removes SSL volume mount
 #   - Disables backup cron (optional)
 
-version: '3.8'
-
 services:
   nginx:
     volumes:

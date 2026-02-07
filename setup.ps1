@@ -57,8 +57,11 @@ function Wait-ForUser {
 function Install-WithWinget {
     param([string]$PackageId, [string]$Name)
     Write-Host "  Installing $Name via winget..." -ForegroundColor Yellow
+    $ErrorActionPreference = "Continue"
     winget install --id $PackageId --accept-package-agreements --accept-source-agreements --silent
-    if ($LASTEXITCODE -ne 0) {
+    $exitCode = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($exitCode -ne 0) {
         Write-Err "Failed to install $Name via winget."
         return $false
     }
@@ -146,12 +149,14 @@ if (-not $hasDocker) {
         $dockerReady = $false
         for ($i = 0; $i -lt 60; $i++) {
             try {
+                $ErrorActionPreference = "Continue"
                 $null = docker info 2>$null
+                $ErrorActionPreference = "Stop"
                 if ($LASTEXITCODE -eq 0) {
                     $dockerReady = $true
                     break
                 }
-            } catch {}
+            } catch { $ErrorActionPreference = "Stop" }
             Start-Sleep -Seconds 3
         }
         if (-not $dockerReady) {
@@ -168,22 +173,29 @@ if (-not $hasDocker) {
 
 # Verify Docker is running
 try {
+    $ErrorActionPreference = "Continue"
     $dockerVersion = docker --version 2>$null
+    $ErrorActionPreference = "Stop"
     Write-Ok "Docker $($dockerVersion -replace 'Docker version ','' -replace ',.*','')"
 } catch {
+    $ErrorActionPreference = "Stop"
     Write-Err "Docker is installed but not responding. Please start Docker Desktop and re-run."
     exit 1
 }
 
 # --- Docker Compose ---
 try {
+    $ErrorActionPreference = "Continue"
     $null = docker compose version 2>$null
-    if ($LASTEXITCODE -eq 0) {
+    $dcExitCode = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($dcExitCode -eq 0) {
         Write-Ok "Docker Compose (included with Docker Desktop)"
     } else {
         throw "not found"
     }
 } catch {
+    $ErrorActionPreference = "Stop"
     Write-Err "Docker Compose not available. It should come with Docker Desktop."
     Write-Host "  Please update Docker Desktop to the latest version." -ForegroundColor Red
     exit 1
@@ -223,7 +235,9 @@ if ($needNode) {
 # --- npm ---
 $hasNpm = $null -ne (Get-Command npm -ErrorAction SilentlyContinue)
 if ($hasNpm) {
+    $ErrorActionPreference = "Continue"
     $npmVersion = npm -v 2>$null
+    $ErrorActionPreference = "Stop"
     Write-Ok "npm v$npmVersion"
 } else {
     Write-Err "npm not found. It should come with Node.js."
@@ -376,23 +390,55 @@ if ($apiEnv -notmatch [regex]::Escape($LanIP)) {
 Write-Step "5/8" "Starting Docker services (PostgreSQL, Redis, MinIO, API, Web)..."
 Write-Warn "This may take several minutes on first run (building images)..."
 
-# Start infrastructure
-docker compose up -d postgres redis minio 2>$null
-Write-Ok "Infrastructure services started"
+# Use the production compose file for everything (it defines all services + networking)
+$ComposeFile = "docker-compose.prod.yml"
+
+# Create required directories for nginx/backup volume mounts
+New-Item -ItemType Directory -Force -Path "$ProjectRoot\nginx\ssl" 2>$null | Out-Null
+New-Item -ItemType Directory -Force -Path "$ProjectRoot\logs\nginx" 2>$null | Out-Null
+New-Item -ItemType Directory -Force -Path "$ProjectRoot\backups" 2>$null | Out-Null
+New-Item -ItemType Directory -Force -Path "$ProjectRoot\scripts" 2>$null | Out-Null
+if (-not (Test-Path "$ProjectRoot\scripts\backup.sh")) {
+    "#!/bin/sh`necho 'Backup placeholder'" | Set-Content -Path "$ProjectRoot\scripts\backup.sh" -Encoding UTF8
+}
+
+# Start infrastructure (temporarily allow stderr so Docker warnings don't abort the script)
+$ErrorActionPreference = "Continue"
+docker compose -f $ComposeFile up -d postgres redis minio 2>$null
+$ErrorActionPreference = "Stop"
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Failed to start infrastructure services. Check Docker Desktop is running."
+    exit 1
+}
+Write-Ok "Infrastructure services started (PostgreSQL, Redis, MinIO)"
 
 # Wait for PostgreSQL
 Write-Host "  Waiting for PostgreSQL to be ready..." -ForegroundColor Gray
+$pgReady = $false
 for ($i = 0; $i -lt 30; $i++) {
     try {
-        $result = docker exec satcom-postgres pg_isready -U satcom -d satcom 2>$null
-        if ($result -match "accepting") { break }
+        $ErrorActionPreference = "Continue"
+        $result = docker exec satcom-postgres pg_isready -U satcom 2>$null
+        $ErrorActionPreference = "Stop"
+        if ($result -match "accepting") { $pgReady = $true; break }
     } catch {}
     Start-Sleep -Seconds 2
 }
-Write-Ok "PostgreSQL ready"
+if ($pgReady) {
+    Write-Ok "PostgreSQL ready"
+} else {
+    Write-Warn "PostgreSQL may still be starting. Continuing..."
+}
 
 # Build and start API + Web
-docker compose -f docker-compose.prod.yml up -d --build api web 2>$null
+Write-Host "  Building and starting API + Web (this may take a few minutes)..." -ForegroundColor Gray
+$ErrorActionPreference = "Continue"
+docker compose -f $ComposeFile up -d --build api web 2>$null
+$ErrorActionPreference = "Stop"
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Failed to build/start API and Web. Check: docker compose -f $ComposeFile logs"
+    exit 1
+}
 Write-Ok "API and Web containers building/starting"
 
 # ============================================================================
@@ -447,7 +493,9 @@ if ($hasNode -and $hasNpm) {
     if ($nodeMajor -ge 20) {
         Write-Host "  Installing npm dependencies..." -ForegroundColor Gray
         Set-Location $ProjectRoot
+        $ErrorActionPreference = "Continue"
         npm install --no-audit --no-fund 2>$null | Select-Object -Last 3
+        $ErrorActionPreference = "Stop"
 
         Write-Host "  Starting Expo dev server on LAN ($LanIP)..." -ForegroundColor Gray
         Set-Location "apps\mobile"
@@ -514,9 +562,11 @@ Write-Host "      3. Open Camera and scan the QR code" -ForegroundColor Gray
 Write-Host "         Or open Safari: exp://${LanIP}:8081" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Useful Commands:" -ForegroundColor White
-Write-Host "    Stop everything:  docker compose -f docker-compose.prod.yml down" -ForegroundColor Cyan
+Write-Host "    Stop all:         docker compose -f docker-compose.prod.yml down" -ForegroundColor Cyan
+Write-Host "    Restart all:      docker compose -f docker-compose.prod.yml up -d" -ForegroundColor Cyan
 Write-Host "    View API logs:    docker logs -f satcom-api" -ForegroundColor Cyan
 Write-Host "    View Web logs:    docker logs -f satcom-web" -ForegroundColor Cyan
+Write-Host "    View all logs:    docker compose -f docker-compose.prod.yml logs -f" -ForegroundColor Cyan
 Write-Host "    Database studio:  cd apps\api; npx prisma studio" -ForegroundColor Cyan
 Write-Host ""
 

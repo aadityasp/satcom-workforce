@@ -47,8 +47,6 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3003
-# Force Prisma to use OpenSSL 3.0.x engine (Alpine 3.23+ ships OpenSSL 3.x)
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-arm64-openssl-3.0.x.so.node
 
 # Install production dependencies
 RUN apk add --no-cache dumb-init openssl
