@@ -65,10 +65,10 @@ export function hasRole(userRole: string, allowedRoles: string[]): boolean {
 export const routeRoles: Record<string, string[]> = {
   '/admin': ['SuperAdmin'],
   '/hr': ['SuperAdmin', 'HR'],
-  '/team': ['SuperAdmin', 'HR', 'Manager'],
   '/dashboard': ['SuperAdmin', 'HR', 'Manager', 'Employee'],
   '/timesheets': ['SuperAdmin', 'HR', 'Manager', 'Employee'],
   '/leaves': ['SuperAdmin', 'HR', 'Manager', 'Employee'],
+  '/team': ['SuperAdmin', 'HR', 'Manager', 'Employee'],
   '/chat': ['SuperAdmin', 'HR', 'Manager', 'Employee'],
 };
 
@@ -81,8 +81,6 @@ export function getDashboardRoute(role: string): string {
       return '/admin';
     case 'HR':
       return '/hr';
-    case 'Manager':
-      return '/team';
     default:
       return '/dashboard';
   }

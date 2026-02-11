@@ -35,6 +35,14 @@ export class LeavesService {
       throw new BadRequestException('Invalid date format for startDate or endDate');
     }
 
+    if (end < start) {
+      throw new BadRequestException('End date must be on or after start date');
+    }
+
+    if (!data.reason || data.reason.trim().length === 0) {
+      throw new BadRequestException('Reason is required');
+    }
+
     const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     // Check for overlapping requests

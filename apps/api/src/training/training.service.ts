@@ -5,7 +5,7 @@
  * and employee training records.
  */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TrainingStatus, CertificationStatus, NotificationType } from '@prisma/client';
@@ -36,6 +36,18 @@ export class TrainingService {
    * Create training program
    */
   async createTraining(companyId: string, actorId: string, dto: CreateTrainingDto) {
+    if (!dto.title || dto.title.trim().length === 0) {
+      throw new BadRequestException('Training title is required');
+    }
+    if (dto.duration <= 0) {
+      throw new BadRequestException('Duration must be a positive number');
+    }
+    if (dto.description && dto.description.length > 10000) {
+      throw new BadRequestException('Description cannot exceed 10000 characters');
+    }
+    if (dto.recurrenceMonths !== undefined && dto.recurrenceMonths <= 0) {
+      throw new BadRequestException('Recurrence months must be a positive number');
+    }
     return this.prisma.training.create({
       data: {
         companyId,
@@ -90,6 +102,16 @@ export class TrainingService {
 
     if (!training) {
       throw new NotFoundException('Training not found');
+    }
+
+    if (!dto.userIds || dto.userIds.length === 0) {
+      throw new BadRequestException('At least one user ID is required');
+    }
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: dto.userIds }, companyId },
+    });
+    if (users.length !== dto.userIds.length) {
+      throw new BadRequestException('One or more users not found in this company');
     }
 
     const assignments = [];
@@ -149,6 +171,10 @@ export class TrainingService {
     progress: number,
     notes?: string
   ) {
+    if (progress < 0 || progress > 100) {
+      throw new BadRequestException('Progress must be between 0 and 100');
+    }
+
     const assignment = await this.prisma.trainingAssignment.findFirst({
       where: { id: assignmentId, userId },
     });
@@ -349,7 +375,9 @@ export class TrainingService {
     return {
       totalEmployees: users.length,
       compliantEmployees: report.filter(r => r.trainingCompliance >= 100).length,
-      averageCompliance: report.reduce((sum, r) => sum + r.trainingCompliance, 0) / report.length,
+      averageCompliance: report.length > 0
+        ? report.reduce((sum, r) => sum + r.trainingCompliance, 0) / report.length
+        : 0,
       details: report,
     };
   }

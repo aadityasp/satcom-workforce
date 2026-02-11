@@ -79,6 +79,13 @@ export class SchedulingService {
    * Create a new shift
    */
   async createShift(companyId: string, actorId: string, dto: CreateShiftDto) {
+    if (dto.breakDuration !== undefined && dto.breakDuration < 0) {
+      throw new BadRequestException('Break duration cannot be negative');
+    }
+    if (dto.notes !== undefined && dto.notes.length > 1000) {
+      throw new BadRequestException('Notes cannot exceed 1000 characters');
+    }
+
     // Validate user belongs to company
     const user = await this.prisma.user.findFirst({
       where: { id: dto.userId, companyId },
@@ -88,7 +95,7 @@ export class SchedulingService {
     }
 
     // Validate times
-    if (isBefore(dto.endTime, dto.startTime)) {
+    if (isBefore(dto.endTime, dto.startTime) || dto.endTime.getTime() === dto.startTime.getTime()) {
       throw new BadRequestException('End time must be after start time');
     }
 
@@ -239,6 +246,18 @@ export class SchedulingService {
       optimizeFor?: 'cost' | 'preference' | 'coverage' | 'balanced';
     }
   ) {
+    if (requirements.minStaffCount < 0 || requirements.maxStaffCount < 0) {
+      throw new BadRequestException('Staff count cannot be negative');
+    }
+    if (requirements.minStaffCount > requirements.maxStaffCount) {
+      throw new BadRequestException('Minimum staff count cannot exceed maximum staff count');
+    }
+    if (requirements.shiftDuration <= 0) {
+      throw new BadRequestException('Shift duration must be positive');
+    }
+    if (requirements.breakDuration < 0) {
+      throw new BadRequestException('Break duration cannot be negative');
+    }
     return this.aiScheduling.generateOptimalSchedule(
       companyId,
       startDate,
@@ -507,15 +526,15 @@ export class SchedulingService {
   async cancelShift(shiftId: string, companyId: string, actorId: string, reason?: string) {
     const shift = await this.getShift(shiftId, companyId);
 
-    if (shift.status === ShiftStatus.Completed) {
-      throw new BadRequestException('Cannot cancel a completed shift');
+    if (shift.status === ShiftStatus.Completed || shift.status === ShiftStatus.Cancelled) {
+      throw new BadRequestException('Cannot cancel a completed or already cancelled shift');
     }
 
     const updated = await this.prisma.shift.update({
       where: { id: shiftId },
       data: {
         status: ShiftStatus.Cancelled,
-        notes: reason,
+        notes: reason ? (shift.notes ? `${shift.notes}\nCancellation: ${reason}` : reason) : shift.notes,
       },
     });
 

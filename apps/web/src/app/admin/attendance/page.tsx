@@ -60,7 +60,7 @@ export default function AdminAttendancePage() {
         return 'bg-success';
       case 'Away':
         return 'bg-warning';
-      case 'OnBreak':
+      case 'Busy':
         return 'bg-blue-500';
       default:
         return 'bg-silver-400';
@@ -73,7 +73,7 @@ export default function AdminAttendancePage() {
         return 'bg-success-light text-success';
       case 'Away':
         return 'bg-warning-light text-warning';
-      case 'OnBreak':
+      case 'Busy':
         return 'bg-blue-100 text-blue-600';
       default:
         return 'bg-silver-100 text-silver-600';
@@ -86,7 +86,7 @@ export default function AdminAttendancePage() {
       (filter === 'Online' && emp.status === 'Online') ||
       (filter === 'Away' && emp.status === 'Away') ||
       (filter === 'Offline' && emp.status === 'Offline') ||
-      (filter === 'OnBreak' && emp.status === 'OnBreak');
+      (filter === 'Busy' && emp.status === 'Busy');
 
     const matchesSearch =
       search === '' ||
@@ -100,7 +100,7 @@ export default function AdminAttendancePage() {
     online: employees.filter((e) => e.status === 'Online').length,
     away: employees.filter((e) => e.status === 'Away').length,
     offline: employees.filter((e) => e.status === 'Offline').length,
-    onBreak: employees.filter((e) => e.status === 'OnBreak').length,
+    busy: employees.filter((e) => e.status === 'Busy').length,
   };
 
   if (!_hasHydrated || !user || !isAdmin) {
@@ -148,9 +148,9 @@ export default function AdminAttendancePage() {
           <div className="bg-white rounded-xl border border-silver-200 p-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <p className="text-sm text-silver-500">On Break</p>
+              <p className="text-sm text-silver-500">Busy</p>
             </div>
-            <p className="text-2xl font-bold text-blue-600 mt-1">{stats.onBreak}</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{stats.busy}</p>
           </div>
           <div className="bg-white rounded-xl border border-silver-200 p-4">
             <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function AdminAttendancePage() {
           </div>
           <div className="flex items-center gap-2">
             <Filter size={18} className="text-silver-500" />
-            {['All', 'Online', 'Away', 'OnBreak', 'Offline'].map((status) => (
+            {['All', 'Online', 'Away', 'Busy', 'Offline'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -185,7 +185,7 @@ export default function AdminAttendancePage() {
                     : 'bg-white text-silver-600 hover:bg-silver-100 border border-silver-200'
                 }`}
               >
-                {status === 'OnBreak' ? 'On Break' : status}
+                {status}
               </button>
             ))}
           </div>
@@ -237,7 +237,7 @@ export default function AdminAttendancePage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 text-xs rounded-full ${getStatusBgColor(employee.status)}`}>
-                          {employee.status === 'OnBreak' ? 'On Break' : employee.status}
+                          {employee.status}
                         </span>
                       </td>
                       <td className="px-6 py-4">

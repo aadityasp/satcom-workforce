@@ -9,7 +9,7 @@
  * - Preference-based routing
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../common/email/email.service';
 import { NotificationType, NotificationChannel, ShiftStatus, UserRole } from '@prisma/client';
@@ -426,7 +426,12 @@ export class NotificationsService {
     token: string,
     platform: 'ios' | 'android' | 'web'
   ): Promise<void> {
-    // Deactivate old tokens for this device (if we had device ID)
+    if (!token || token.trim().length === 0) {
+      throw new BadRequestException('Push token is required');
+    }
+    if (token.length > 500) {
+      throw new BadRequestException('Push token is too long');
+    }
     await this.prisma.pushToken.upsert({
       where: { userId_token: { userId, token } },
       create: {

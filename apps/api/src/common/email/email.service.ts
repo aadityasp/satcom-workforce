@@ -29,7 +29,7 @@ export class EmailService {
       auth: this.configService.get('SMTP_USER')
         ? {
             user: this.configService.get('SMTP_USER'),
-            pass: this.configService.get('SMTP_PASS'),
+            pass: this.configService.get('SMTP_PASSWORD'),
           }
         : undefined,
     });

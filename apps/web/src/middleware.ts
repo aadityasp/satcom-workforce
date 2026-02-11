@@ -16,7 +16,6 @@ const publicPaths = ['/login', '/forgot-password', '/reset-password'];
 const roleRoutes: Record<string, string[]> = {
   '/admin': ['SuperAdmin'],
   '/hr': ['SuperAdmin', 'HR'],
-  '/team': ['SuperAdmin', 'HR', 'Manager'],
 };
 
 // Get dashboard route based on role
@@ -24,7 +23,6 @@ function getDashboardForRole(role: string): string {
   switch (role) {
     case 'SuperAdmin': return '/admin';
     case 'HR': return '/hr';
-    case 'Manager': return '/team';
     default: return '/dashboard';
   }
 }

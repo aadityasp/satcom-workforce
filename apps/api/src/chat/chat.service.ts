@@ -172,6 +172,10 @@ export class ChatService {
   }
 
   async sendMessage(userId: string, threadId: string, data: CreateMessageDto) {
+    if (!data.content && !data.attachmentUrl) {
+      throw new BadRequestException('Message must have content or an attachment');
+    }
+
     // Verify membership
     const member = await this.prisma.chatMember.findUnique({
       where: { threadId_userId: { threadId, userId } },
@@ -266,6 +270,9 @@ export class ChatService {
   }
 
   async editMessage(userId: string, messageId: string, content: string) {
+    if (!content || content.trim().length === 0) {
+      throw new BadRequestException('Message content is required');
+    }
     const message = await this.prisma.chatMessage.findUnique({
       where: { id: messageId },
     });

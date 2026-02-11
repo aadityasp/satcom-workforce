@@ -25,7 +25,7 @@ interface TeamActivity {
     department: string;
   } | null;
   presence: {
-    status: 'Online' | 'Away' | 'Offline';
+    status: 'Online' | 'Away' | 'Offline' | 'Busy';
     statusMessage: string | null;
     currentProject: { id: string; name: string; code: string } | null;
     currentTask: { id: string; name: string; code: string } | null;

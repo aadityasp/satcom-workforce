@@ -4,7 +4,7 @@
  * Manages reusable shift templates for quick scheduling.
  */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CreateTemplateDto {
@@ -22,6 +22,18 @@ export class ShiftTemplatesService {
   constructor(private prisma: PrismaService) {}
 
   async create(companyId: string, actorId: string, dto: CreateTemplateDto) {
+    if (!dto.name || dto.name.trim().length === 0) {
+      throw new BadRequestException('Template name is required');
+    }
+    if (dto.breakDuration < 0) {
+      throw new BadRequestException('Break duration cannot be negative');
+    }
+    if (!dto.daysOfWeek || dto.daysOfWeek.length === 0) {
+      throw new BadRequestException('At least one day of week is required');
+    }
+    if (dto.daysOfWeek.some(d => d < 0 || d > 6)) {
+      throw new BadRequestException('Days of week must be between 0 (Sunday) and 6 (Saturday)');
+    }
     return this.prisma.shiftTemplate.create({
       data: {
         companyId,

@@ -97,6 +97,10 @@ export class ShiftSwapsService {
             startTime: { lt: shift.endTime },
             endTime: { gte: shift.endTime },
           },
+          {
+            startTime: { gte: shift.startTime },
+            endTime: { lte: shift.endTime },
+          },
         ],
       },
     });

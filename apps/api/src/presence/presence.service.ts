@@ -1,7 +1,7 @@
 /**
  * Presence Service - Manages user online/away/offline status with activity tracking
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PresenceStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -123,6 +123,12 @@ export class PresenceService {
    * Post a status update message - ACTV-02
    */
   async postStatusUpdate(userId: string, message: string) {
+    if (!message || message.trim().length === 0) {
+      throw new BadRequestException('Status message is required');
+    }
+    if (message.length > 500) {
+      throw new BadRequestException('Status message cannot exceed 500 characters');
+    }
     const now = new Date();
     return this.prisma.presenceSession.upsert({
       where: { userId },

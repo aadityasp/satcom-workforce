@@ -32,18 +32,27 @@ import { format } from 'date-fns';
 
 interface LeaveBalance {
   id: string;
-  leaveType: string;
-  totalDays: number;
-  usedDays: number;
-  remainingDays: number;
+  allocated: number | string;
+  used: number | string;
+  pending: number | string;
+  leaveType: {
+    id: string;
+    name: string;
+    code: string;
+  };
 }
 
 interface LeaveRequest {
   id: string;
-  leaveType: string;
+  leaveTypeId: string;
+  leaveType?: {
+    id: string;
+    name: string;
+    code: string;
+  };
   startDate: string;
   endDate: string;
-  totalDays: number;
+  totalDays: number | string;
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
   createdAt: string;
@@ -81,7 +90,7 @@ export default function LeaveScreen() {
     try {
       const [balanceRes, requestsRes, typesRes] = await Promise.all([
         api.get<{ balances: LeaveBalance[] }>('/leaves/balance'),
-        api.get<{ data: LeaveRequest[]; total: number }>('/leaves/requests'),
+        api.get<LeaveRequest[]>('/leaves/requests'),
         api.get<LeaveType[]>('/leaves/types'),
       ]);
 
@@ -89,8 +98,9 @@ export default function LeaveScreen() {
         const balData = balanceRes.data as any;
         setBalances(balData.balances || []);
       }
-      if (requestsRes.success && requestsRes.data) {
-        setRequests(Array.isArray(requestsRes.data) ? requestsRes.data : []);
+      if (requestsRes.success) {
+        const reqData = (requestsRes as any).data;
+        setRequests(Array.isArray(reqData) ? reqData : []);
       }
       if (typesRes.success && typesRes.data) {
         setLeaveTypes(Array.isArray(typesRes.data) ? typesRes.data : []);
@@ -115,7 +125,7 @@ export default function LeaveScreen() {
     setIsSubmitting(true);
     try {
       const res = await api.post('/leaves/request', {
-        leaveType: selectedType,
+        leaveTypeId: selectedType,
         startDate,
         endDate,
         reason: reason.trim(),
@@ -191,30 +201,32 @@ export default function LeaveScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.balancesRow}
             >
-              {balances.map((balance) => (
-                <View key={balance.id} style={styles.balanceCard}>
-                  <Text style={styles.balanceType}>{balance.leaveType}</Text>
-                  <Text style={styles.balanceCount}>
-                    {balance.remainingDays}
-                  </Text>
-                  <Text style={styles.balanceLabel}>
-                    of {balance.totalDays} remaining
-                  </Text>
-                  <View style={styles.balanceBar}>
-                    <View
-                      style={[
-                        styles.balanceBarFill,
-                        {
-                          width: `${Math.min(
-                            ((balance.totalDays - balance.remainingDays) / balance.totalDays) * 100,
-                            100
-                          )}%`,
-                        },
-                      ]}
-                    />
+              {balances.map((balance) => {
+                const allocated = Number(balance.allocated);
+                const used = Number(balance.used);
+                const remaining = allocated - used;
+                return (
+                  <View key={balance.id} style={styles.balanceCard}>
+                    <Text style={styles.balanceType}>{balance.leaveType?.name || 'Leave'}</Text>
+                    <Text style={styles.balanceCount}>
+                      {remaining}
+                    </Text>
+                    <Text style={styles.balanceLabel}>
+                      of {allocated} remaining
+                    </Text>
+                    <View style={styles.balanceBar}>
+                      <View
+                        style={[
+                          styles.balanceBarFill,
+                          {
+                            width: `${allocated > 0 ? Math.min((used / allocated) * 100, 100) : 0}%`,
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </ScrollView>
           )}
         </Animated.View>
@@ -228,36 +240,39 @@ export default function LeaveScreen() {
               <Text style={styles.emptyText}>No leave requests yet</Text>
             </View>
           ) : (
-            requests.map((request) => (
-              <View key={request.id} style={styles.requestCard}>
-                <View style={styles.requestHeader}>
-                  <Text style={styles.requestType}>{request.leaveType}</Text>
-                  <View style={styles.statusBadge}>
-                    {getStatusIcon(request.status)}
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: getStatusColor(request.status) },
-                      ]}
-                    >
-                      {request.status}
-                    </Text>
+            requests.map((request) => {
+              const days = Number(request.totalDays);
+              return (
+                <View key={request.id} style={styles.requestCard}>
+                  <View style={styles.requestHeader}>
+                    <Text style={styles.requestType}>{request.leaveType?.name || 'Leave'}</Text>
+                    <View style={styles.statusBadge}>
+                      {getStatusIcon(request.status)}
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: getStatusColor(request.status) },
+                        ]}
+                      >
+                        {request.status}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <Text style={styles.requestDates}>
-                  {format(new Date(request.startDate), 'MMM d')} -{' '}
-                  {format(new Date(request.endDate), 'MMM d, yyyy')}
-                </Text>
-                <Text style={styles.requestDays}>
-                  {request.totalDays} day{request.totalDays !== 1 ? 's' : ''}
-                </Text>
-                {request.reason && (
-                  <Text style={styles.requestReason} numberOfLines={2}>
-                    {request.reason}
+                  <Text style={styles.requestDates}>
+                    {format(new Date(request.startDate), 'MMM d')} -{' '}
+                    {format(new Date(request.endDate), 'MMM d, yyyy')}
                   </Text>
-                )}
-              </View>
-            ))
+                  <Text style={styles.requestDays}>
+                    {days} day{days !== 1 ? 's' : ''}
+                  </Text>
+                  {request.reason && (
+                    <Text style={styles.requestReason} numberOfLines={2}>
+                      {request.reason}
+                    </Text>
+                  )}
+                </View>
+              );
+            })
           )}
         </Animated.View>
       </ScrollView>
@@ -312,7 +327,7 @@ export default function LeaveScreen() {
                   !selectedType && styles.placeholderText,
                 ]}
               >
-                {selectedType || 'Select leave type'}
+                {(selectedType && leaveTypes.find((t) => t.id === selectedType)?.name) || 'Select leave type'}
               </Text>
               <ChevronDown size={20} color={colors.silver[400]} />
             </TouchableOpacity>
@@ -323,17 +338,17 @@ export default function LeaveScreen() {
                     key={type.id || type.code}
                     style={[
                       styles.pickerOption,
-                      selectedType === type.code && styles.pickerOptionSelected,
+                      selectedType === type.id && styles.pickerOptionSelected,
                     ]}
                     onPress={() => {
-                      setSelectedType(type.code);
+                      setSelectedType(type.id);
                       setShowTypePicker(false);
                     }}
                   >
                     <Text
                       style={[
                         styles.pickerOptionText,
-                        selectedType === type.code &&
+                        selectedType === type.id &&
                           styles.pickerOptionTextSelected,
                       ]}
                     >

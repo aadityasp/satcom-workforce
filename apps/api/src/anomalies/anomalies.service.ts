@@ -69,8 +69,10 @@ export class AnomaliesService {
     return { total, open, acknowledged, resolved, bySeverity, byType };
   }
 
-  async acknowledge(id: string, actorId: string, notes?: string) {
-    const anomaly = await this.prisma.anomalyEvent.findUnique({ where: { id } });
+  async acknowledge(id: string, actorId: string, companyId: string, notes?: string) {
+    const anomaly = await this.prisma.anomalyEvent.findFirst({
+      where: { id, user: { companyId } },
+    });
     if (!anomaly) throw new NotFoundException('Anomaly not found');
 
     return this.prisma.anomalyEvent.update({
@@ -84,8 +86,10 @@ export class AnomaliesService {
     });
   }
 
-  async resolve(id: string, actorId: string, notes: string) {
-    const anomaly = await this.prisma.anomalyEvent.findUnique({ where: { id } });
+  async resolve(id: string, actorId: string, companyId: string, notes: string) {
+    const anomaly = await this.prisma.anomalyEvent.findFirst({
+      where: { id, user: { companyId } },
+    });
     if (!anomaly) throw new NotFoundException('Anomaly not found');
 
     return this.prisma.anomalyEvent.update({
@@ -99,8 +103,10 @@ export class AnomaliesService {
     });
   }
 
-  async dismiss(id: string, actorId: string, reason: string) {
-    const anomaly = await this.prisma.anomalyEvent.findUnique({ where: { id } });
+  async dismiss(id: string, actorId: string, companyId: string, reason: string) {
+    const anomaly = await this.prisma.anomalyEvent.findFirst({
+      where: { id, user: { companyId } },
+    });
     if (!anomaly) throw new NotFoundException('Anomaly not found');
 
     return this.prisma.anomalyEvent.update({

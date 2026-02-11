@@ -4,7 +4,7 @@
  * Manages employee availability and preferences.
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { format, getDay } from 'date-fns';
 
@@ -26,20 +26,29 @@ export class AvailabilityService {
     userId: string,
     slots: AvailabilitySlotDto[]
   ) {
-    // Delete existing availability
-    await this.prisma.userAvailability.deleteMany({
-      where: { userId },
-    });
+    for (const slot of slots) {
+      if (slot.dayOfWeek < 0 || slot.dayOfWeek > 6) {
+        throw new BadRequestException('Day of week must be between 0 (Sunday) and 6 (Saturday)');
+      }
+      if (!/^\d{2}:\d{2}$/.test(slot.startTime) || !/^\d{2}:\d{2}$/.test(slot.endTime)) {
+        throw new BadRequestException('Time must be in HH:mm format');
+      }
+    }
 
-    // Create new availability slots
-    const created = await this.prisma.userAvailability.createMany({
-      data: slots.map(slot => ({
-        userId,
-        dayOfWeek: slot.dayOfWeek,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        isPreferred: slot.isPreferred ?? true,
-      })),
+    const created = await this.prisma.$transaction(async (tx) => {
+      await tx.userAvailability.deleteMany({
+        where: { userId },
+      });
+
+      return tx.userAvailability.createMany({
+        data: slots.map(slot => ({
+          userId,
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          isPreferred: slot.isPreferred ?? true,
+        })),
+      });
     });
 
     return { success: true, count: created.count };

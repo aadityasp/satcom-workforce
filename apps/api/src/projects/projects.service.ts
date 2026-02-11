@@ -21,9 +21,9 @@ export class ProjectsService {
    * Create a new project
    */
   async createProject(companyId: string, dto: CreateProjectDto) {
-    // Check code uniqueness
-    const existing = await this.prisma.project.findUnique({
-      where: { code: dto.code }
+    // Check code uniqueness within company
+    const existing = await this.prisma.project.findFirst({
+      where: { code: dto.code, companyId }
     });
     if (existing) {
       throw new ConflictException('Project code already exists');
@@ -67,7 +67,7 @@ export class ProjectsService {
   /**
    * Get a project by ID
    */
-  async findProjectById(id: string) {
+  async findProjectById(id: string, companyId?: string) {
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
@@ -80,20 +80,24 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException('Project not found');
     }
+    if (companyId && project.companyId !== companyId) {
+      throw new NotFoundException('Project not found');
+    }
     return project;
   }
 
   /**
    * Update a project
    */
-  async updateProject(id: string, dto: UpdateProjectDto) {
-    await this.findProjectById(id); // Verify exists
+  async updateProject(id: string, dto: UpdateProjectDto, companyId?: string) {
+    const project = await this.findProjectById(id, companyId);
 
     // Check code uniqueness if code is being updated
     if (dto.code) {
       const existing = await this.prisma.project.findFirst({
         where: {
           code: dto.code,
+          companyId: project.companyId,
           id: { not: id },
         },
       });
@@ -117,8 +121,8 @@ export class ProjectsService {
   /**
    * Deactivate a project (soft delete)
    */
-  async deactivateProject(id: string) {
-    return this.updateProject(id, { isActive: false });
+  async deactivateProject(id: string, companyId?: string) {
+    return this.updateProject(id, { isActive: false }, companyId);
   }
 
   // ===== Tasks =====
@@ -126,9 +130,9 @@ export class ProjectsService {
   /**
    * Create a new task
    */
-  async createTask(dto: CreateTaskDto) {
-    // Verify project exists
-    await this.findProjectById(dto.projectId);
+  async createTask(dto: CreateTaskDto, companyId?: string) {
+    // Verify project exists and belongs to company
+    await this.findProjectById(dto.projectId, companyId);
 
     // Check code uniqueness within project
     const existing = await this.prisma.task.findUnique({

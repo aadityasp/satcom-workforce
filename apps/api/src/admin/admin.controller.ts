@@ -76,7 +76,7 @@ export class AdminController {
   @Roles(UserRole.SuperAdmin)
   @ApiOperation({ summary: 'Update anomaly rule' })
   async updateAnomalyRule(@Param('id') id: string, @CurrentUser() user: any, @Body() body: any) {
-    const data = await this.adminService.updateAnomalyRule(id, body, user.id);
+    const data = await this.adminService.updateAnomalyRule(id, user.companyId, body, user.id);
     return { success: true, data };
   }
 

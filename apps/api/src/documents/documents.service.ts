@@ -35,6 +35,35 @@ export class DocumentsService {
     file: Express.Multer.File,
     dto: UploadDocumentDto
   ) {
+    if (!dto.title || dto.title.trim().length === 0) {
+      throw new BadRequestException('Document title is required');
+    }
+    if (dto.description && dto.description.length > 10000) {
+      throw new BadRequestException('Description cannot exceed 10000 characters');
+    }
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+    const maxFileSize = 50 * 1024 * 1024;
+    if (file.size > maxFileSize) {
+      throw new BadRequestException('File size cannot exceed 50MB');
+    }
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'text/plain',
+      'text/csv',
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('File type not allowed');
+    }
+
     // Upload to storage
     const uploadResult = await this.storage.uploadFile(
       file,
@@ -193,6 +222,9 @@ export class DocumentsService {
     name: string,
     description?: string
   ) {
+    if (!name || name.trim().length === 0) {
+      throw new BadRequestException('Category name is required');
+    }
     return this.prisma.documentCategory.create({
       data: {
         companyId,

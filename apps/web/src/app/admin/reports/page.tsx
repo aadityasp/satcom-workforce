@@ -19,10 +19,10 @@ export default function ReportsPage() {
   const [exportingId, setExportingId] = useState<number | null>(null);
 
   const reports = [
-    { id: 1, name: 'Attendance Summary', desc: 'Daily attendance metrics', icon: Clock, color: 'blue', route: '/reports/hr' },
-    { id: 2, name: 'Employee Activity', desc: 'Work hours and breaks', icon: Users, color: 'green', route: '/reports/hr' },
-    { id: 3, name: 'Leave Analytics', desc: 'Leave patterns and balances', icon: Calendar, color: 'purple', route: '/reports/hr' },
-    { id: 4, name: 'Anomaly Report', desc: 'Flagged events summary', icon: BarChart3, color: 'orange', route: '/admin/anomalies' },
+    { id: 1, name: 'Attendance Summary', desc: 'Daily attendance metrics', icon: Clock, bgColor: 'bg-blue-100', textColor: 'text-blue-600', route: '/reports/hr' },
+    { id: 2, name: 'Employee Activity', desc: 'Work hours and breaks', icon: Users, bgColor: 'bg-green-100', textColor: 'text-green-600', route: '/reports/hr' },
+    { id: 3, name: 'Leave Analytics', desc: 'Leave patterns and balances', icon: Calendar, bgColor: 'bg-purple-100', textColor: 'text-purple-600', route: '/reports/hr' },
+    { id: 4, name: 'Anomaly Report', desc: 'Flagged events summary', icon: BarChart3, bgColor: 'bg-orange-100', textColor: 'text-orange-600', route: '/admin/anomalies' },
   ];
 
   const handleViewReport = (report: typeof reports[0]) => {
@@ -112,8 +112,8 @@ export default function ReportsPage() {
             <div key={report.id} className="bg-white rounded-xl border border-silver-200 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg bg-${report.color}-100`}>
-                    <report.icon size={24} className={`text-${report.color}-600`} />
+                  <div className={`p-3 rounded-lg ${report.bgColor}`}>
+                    <report.icon size={24} className={report.textColor} />
                   </div>
                   <div>
                     <h3 className="font-medium text-navy-900">{report.name}</h3>

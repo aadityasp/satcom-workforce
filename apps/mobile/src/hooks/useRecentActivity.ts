@@ -23,6 +23,12 @@ interface AttendanceEvent {
   location?: { name: string } | null;
 }
 
+interface AttendanceDayResponse {
+  id: string;
+  date: string;
+  events: AttendanceEvent[];
+}
+
 interface UseRecentActivityReturn {
   activities: ActivityItem[];
   isLoading: boolean;
@@ -37,7 +43,7 @@ function mapAttendanceEvent(event: AttendanceEvent): ActivityItem {
   const locationName = event.location?.name || 'Office';
 
   switch (event.type) {
-    case 'CHECK_IN':
+    case 'CheckIn':
       return {
         id: event.id,
         type: 'checkin',
@@ -45,7 +51,7 @@ function mapAttendanceEvent(event: AttendanceEvent): ActivityItem {
         timestamp: new Date(event.timestamp),
         color: 'success',
       };
-    case 'CHECK_OUT':
+    case 'CheckOut':
       return {
         id: event.id,
         type: 'checkout',
@@ -53,27 +59,11 @@ function mapAttendanceEvent(event: AttendanceEvent): ActivityItem {
         timestamp: new Date(event.timestamp),
         color: 'info',
       };
-    case 'BREAK_START':
-      return {
-        id: event.id,
-        type: 'break',
-        title: 'Started break',
-        timestamp: new Date(event.timestamp),
-        color: 'info',
-      };
-    case 'BREAK_END':
-      return {
-        id: event.id,
-        type: 'break',
-        title: 'Ended break',
-        timestamp: new Date(event.timestamp),
-        color: 'info',
-      };
     default:
       return {
         id: event.id,
         type: 'checkin',
-        title: event.type.replace(/_/g, ' ').toLowerCase(),
+        title: event.type,
         timestamp: new Date(event.timestamp),
         color: 'info',
       };
@@ -96,13 +86,19 @@ export function useRecentActivity(): UseRecentActivityReturn {
       const endDate = format(new Date(), 'yyyy-MM-dd');
       const startDate = format(subDays(new Date(), 7), 'yyyy-MM-dd');
 
-      const response = await api.get<AttendanceEvent[]>(
+      const response = await api.get<AttendanceDayResponse[]>(
         `/attendance?startDate=${startDate}&endDate=${endDate}&limit=10`
       );
 
       if (response.success && response.data) {
-        const rawData = Array.isArray(response.data) ? response.data : [];
-        const mapped = rawData
+        const days = Array.isArray(response.data) ? response.data : [];
+        const allEvents: AttendanceEvent[] = [];
+        for (const day of days) {
+          if (Array.isArray(day.events)) {
+            allEvents.push(...day.events);
+          }
+        }
+        const mapped = allEvents
           .map(mapAttendanceEvent)
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
           .slice(0, 5);

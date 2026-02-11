@@ -495,9 +495,9 @@ export class AISchedulingService {
 
     // Calculate fairness (standard deviation of shift counts)
     const shiftCounts = Array.from(employeeShiftCounts.values());
-    const avgShifts = shiftCounts.reduce((a, b) => a + b, 0) / shiftCounts.length;
-    const variance = shiftCounts.reduce((sum, count) => 
-      sum + Math.pow(count - avgShifts, 2), 0) / shiftCounts.length;
+    const avgShifts = shiftCounts.length > 0 ? shiftCounts.reduce((a, b) => a + b, 0) / shiftCounts.length : 0;
+    const variance = shiftCounts.length > 0 ? shiftCounts.reduce((sum, count) =>
+      sum + Math.pow(count - avgShifts, 2), 0) / shiftCounts.length : 0;
     const fairnessScore = 100 - Math.min(100, Math.sqrt(variance) * 10);
 
     return {

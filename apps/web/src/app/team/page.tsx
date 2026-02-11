@@ -10,6 +10,7 @@ const statusOptions: { value: PresenceStatus | null; label: string }[] = [
   { value: null, label: 'All Statuses' },
   { value: 'Online', label: 'Online' },
   { value: 'Away', label: 'Away' },
+  { value: 'Busy', label: 'Busy' },
   { value: 'Offline', label: 'Offline' },
 ];
 

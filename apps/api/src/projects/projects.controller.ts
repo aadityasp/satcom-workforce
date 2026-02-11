@@ -61,22 +61,22 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID' })
-  async findProject(@Param('id') id: string) {
-    const result = await this.projectsService.findProjectById(id);
+  async findProject(@Param('id') id: string, @CurrentUser() user: any) {
+    const result = await this.projectsService.findProjectById(id, user.companyId);
     return { success: true, data: result };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update project' })
-  async updateProject(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
-    const result = await this.projectsService.updateProject(id, dto);
+  async updateProject(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: UpdateProjectDto) {
+    const result = await this.projectsService.updateProject(id, dto, user.companyId);
     return { success: true, data: result };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate project (soft delete)' })
-  async deactivateProject(@Param('id') id: string) {
-    const result = await this.projectsService.deactivateProject(id);
+  async deactivateProject(@Param('id') id: string, @CurrentUser() user: any) {
+    const result = await this.projectsService.deactivateProject(id, user.companyId);
     return { success: true, data: result };
   }
 
@@ -84,8 +84,8 @@ export class ProjectsController {
 
   @Post('tasks')
   @ApiOperation({ summary: 'Create task in project' })
-  async createTask(@Body() dto: CreateTaskDto) {
-    const result = await this.projectsService.createTask(dto);
+  async createTask(@CurrentUser() user: any, @Body() dto: CreateTaskDto) {
+    const result = await this.projectsService.createTask(dto, user.companyId);
     return { success: true, data: result };
   }
 

@@ -85,7 +85,13 @@ export class AdminService {
     return this.prisma.anomalyRule.findMany({ where: { companyId } });
   }
 
-  async updateAnomalyRule(ruleId: string, data: any, actorId: string) {
+  async updateAnomalyRule(ruleId: string, companyId: string, data: any, actorId: string) {
+    const existing = await this.prisma.anomalyRule.findFirst({
+      where: { id: ruleId, companyId },
+    });
+    if (!existing) {
+      throw new BadRequestException('Anomaly rule not found');
+    }
     const rule = await this.prisma.anomalyRule.update({
       where: { id: ruleId },
       data,

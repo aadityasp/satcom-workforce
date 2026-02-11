@@ -27,7 +27,7 @@ export interface ChatMessage {
   id: string;
   threadId: string;
   senderId: string;
-  type: 'Text' | 'File' | 'Image' | 'Voice' | 'Location';
+  type: 'Text' | 'VoiceNote' | 'File' | 'System';
   content?: string | null;
   attachmentUrl?: string | null;
   attachmentType?: string | null;

@@ -49,7 +49,7 @@ export class AnomaliesController {
     @CurrentUser() user: any,
     @Body() body: { notes?: string },
   ) {
-    const data = await this.anomaliesService.acknowledge(id, user.id, body.notes);
+    const data = await this.anomaliesService.acknowledge(id, user.id, user.companyId, body.notes);
     return { success: true, data };
   }
 
@@ -60,7 +60,7 @@ export class AnomaliesController {
     @CurrentUser() user: any,
     @Body() body: { notes: string },
   ) {
-    const data = await this.anomaliesService.resolve(id, user.id, body.notes);
+    const data = await this.anomaliesService.resolve(id, user.id, user.companyId, body.notes);
     return { success: true, data };
   }
 
@@ -71,7 +71,7 @@ export class AnomaliesController {
     @CurrentUser() user: any,
     @Body() body: { reason: string },
   ) {
-    const data = await this.anomaliesService.dismiss(id, user.id, body.reason);
+    const data = await this.anomaliesService.dismiss(id, user.id, user.companyId, body.reason);
     return { success: true, data };
   }
 }

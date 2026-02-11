@@ -7,16 +7,18 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
 interface WorkPolicy {
-  standardWorkMinutes: number;
-  graceMinutes: number;
+  standardWorkHours: number;
+  graceMinutesLate: number;
+  graceMinutesEarly: number;
   maxOvertimeMinutes: number;
-  maxBreakMinutes: number;
+  breakDurationMinutes: number;
+  lunchDurationMinutes: number;
 }
 
 interface GeofencePolicy {
-  enabled: boolean;
-  radiusMeters: number;
-  strictMode: boolean;
+  isEnabled: boolean;
+  requireGeofenceForOffice: boolean;
+  allowBypassWithReason: boolean;
 }
 
 export default function SettingsPage() {
@@ -28,16 +30,18 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [workPolicy, setWorkPolicy] = useState<WorkPolicy>({
-    standardWorkMinutes: 480,
-    graceMinutes: 15,
-    maxOvertimeMinutes: 180,
-    maxBreakMinutes: 60,
+    standardWorkHours: 8,
+    graceMinutesLate: 15,
+    graceMinutesEarly: 15,
+    maxOvertimeMinutes: 240,
+    breakDurationMinutes: 15,
+    lunchDurationMinutes: 60,
   });
 
   const [geofencePolicy, setGeofencePolicy] = useState<GeofencePolicy>({
-    enabled: true,
-    radiusMeters: 100,
-    strictMode: false,
+    isEnabled: false,
+    requireGeofenceForOffice: false,
+    allowBypassWithReason: true,
   });
 
   const isSuperAdmin = user?.role === 'SuperAdmin';
@@ -183,7 +187,7 @@ export default function SettingsPage() {
                   Save
                 </button>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-1">
                     Standard Work Hours
@@ -191,8 +195,8 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      value={Math.floor(workPolicy.standardWorkMinutes / 60)}
-                      onChange={(e) => setWorkPolicy({ ...workPolicy, standardWorkMinutes: parseInt(e.target.value) * 60 })}
+                      value={workPolicy.standardWorkHours}
+                      onChange={(e) => setWorkPolicy({ ...workPolicy, standardWorkHours: parseInt(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-silver-500 text-sm">hours</span>
@@ -200,13 +204,13 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-1">
-                    Grace Period
+                    Grace Period (Late)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      value={workPolicy.graceMinutes}
-                      onChange={(e) => setWorkPolicy({ ...workPolicy, graceMinutes: parseInt(e.target.value) })}
+                      value={workPolicy.graceMinutesLate}
+                      onChange={(e) => setWorkPolicy({ ...workPolicy, graceMinutesLate: parseInt(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-silver-500 text-sm">mins</span>
@@ -219,22 +223,36 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      value={Math.floor(workPolicy.maxOvertimeMinutes / 60)}
-                      onChange={(e) => setWorkPolicy({ ...workPolicy, maxOvertimeMinutes: parseInt(e.target.value) * 60 })}
+                      value={workPolicy.maxOvertimeMinutes}
+                      onChange={(e) => setWorkPolicy({ ...workPolicy, maxOvertimeMinutes: parseInt(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="text-silver-500 text-sm">hours</span>
+                    <span className="text-silver-500 text-sm">mins</span>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-1">
-                    Max Break Time
+                    Break Duration
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      value={workPolicy.maxBreakMinutes}
-                      onChange={(e) => setWorkPolicy({ ...workPolicy, maxBreakMinutes: parseInt(e.target.value) })}
+                      value={workPolicy.breakDurationMinutes}
+                      onChange={(e) => setWorkPolicy({ ...workPolicy, breakDurationMinutes: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-silver-500 text-sm">mins</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">
+                    Lunch Duration
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={workPolicy.lunchDurationMinutes}
+                      onChange={(e) => setWorkPolicy({ ...workPolicy, lunchDurationMinutes: parseInt(e.target.value) || 0 })}
                       className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <span className="text-silver-500 text-sm">mins</span>
@@ -270,8 +288,8 @@ export default function SettingsPage() {
                     Geofence Enabled
                   </label>
                   <select
-                    value={geofencePolicy.enabled ? 'true' : 'false'}
-                    onChange={(e) => setGeofencePolicy({ ...geofencePolicy, enabled: e.target.value === 'true' })}
+                    value={geofencePolicy.isEnabled ? 'true' : 'false'}
+                    onChange={(e) => setGeofencePolicy({ ...geofencePolicy, isEnabled: e.target.value === 'true' })}
                     className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="true">Yes</option>
@@ -280,29 +298,28 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-1">
-                    Office Radius
+                    Require for Office Check-in
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={geofencePolicy.radiusMeters}
-                      onChange={(e) => setGeofencePolicy({ ...geofencePolicy, radiusMeters: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-silver-500 text-sm">meters</span>
-                  </div>
+                  <select
+                    value={geofencePolicy.requireGeofenceForOffice ? 'true' : 'false'}
+                    onChange={(e) => setGeofencePolicy({ ...geofencePolicy, requireGeofenceForOffice: e.target.value === 'true' })}
+                    className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="true">Yes (Block check-in outside geofence)</option>
+                    <option value="false">No (Allow but flag as anomaly)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-navy-700 mb-1">
-                    Strict Mode
+                    Allow Bypass with Reason
                   </label>
                   <select
-                    value={geofencePolicy.strictMode ? 'true' : 'false'}
-                    onChange={(e) => setGeofencePolicy({ ...geofencePolicy, strictMode: e.target.value === 'true' })}
+                    value={geofencePolicy.allowBypassWithReason ? 'true' : 'false'}
+                    onChange={(e) => setGeofencePolicy({ ...geofencePolicy, allowBypassWithReason: e.target.value === 'true' })}
                     className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="true">Yes (Block check-in outside radius)</option>
-                    <option value="false">No (Allow but flag as anomaly)</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
                   </select>
                 </div>
               </div>

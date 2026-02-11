@@ -39,9 +39,20 @@ export class ExpensesService {
     companyId: string,
     dto: CreateExpenseDto
   ) {
-    // EXP-1 fix: Validate that expense amount is positive
     if (!dto.amount || dto.amount <= 0) {
       throw new BadRequestException('Expense amount must be a positive number');
+    }
+    if (dto.amount > 1000000) {
+      throw new BadRequestException('Expense amount cannot exceed 1,000,000');
+    }
+    if (!dto.description || dto.description.trim().length === 0) {
+      throw new BadRequestException('Description is required');
+    }
+    if (dto.description.length > 5000) {
+      throw new BadRequestException('Description cannot exceed 5000 characters');
+    }
+    if (dto.mileage !== undefined && dto.mileage < 0) {
+      throw new BadRequestException('Mileage cannot be negative');
     }
 
     let receiptUrl: string | undefined;
@@ -192,7 +203,7 @@ export class ExpensesService {
     await this.notifications.sendToUser(expense.userId, {
       type: NotificationType.System,
       title: 'Expense Approved',
-      body: `Your $${expense.amount} expense has been approved`,
+      body: `Your $${Number(expense.amount)} expense has been approved`,
       data: { expenseId },
     });
 
@@ -234,7 +245,7 @@ export class ExpensesService {
     await this.notifications.sendToUser(expense.userId, {
       type: NotificationType.System,
       title: 'Expense Rejected',
-      body: `Your $${expense.amount} expense was not approved: ${reason}`,
+      body: `Your $${Number(expense.amount)} expense was not approved: ${reason}`,
       data: { expenseId },
     });
 
@@ -277,7 +288,7 @@ export class ExpensesService {
     await this.notifications.sendToUser(expense.userId, {
       type: NotificationType.System,
       title: 'Expense Reimbursed',
-      body: `Your $${expense.amount} expense has been reimbursed`,
+      body: `Your $${Number(expense.amount)} expense has been reimbursed`,
       data: { expenseId },
     });
 
@@ -346,6 +357,12 @@ export class ExpensesService {
       notes?: string;
     }
   ) {
+    if (dto.maxAmount !== undefined && dto.maxAmount < 0) {
+      throw new BadRequestException('Max amount cannot be negative');
+    }
+    if (dto.receiptThreshold !== undefined && dto.receiptThreshold < 0) {
+      throw new BadRequestException('Receipt threshold cannot be negative');
+    }
     return this.prisma.expensePolicy.create({
       data: {
         companyId,
