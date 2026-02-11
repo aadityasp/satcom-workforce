@@ -202,6 +202,13 @@ export class UsersService {
         phone: updateUserDto.phone,
         role: updateUserDto.role,
         isActive: updateUserDto.isActive,
+        ...(updateUserDto.profile
+          ? {
+              profile: {
+                update: updateUserDto.profile,
+              },
+            }
+          : {}),
       },
       include: { profile: true },
     });

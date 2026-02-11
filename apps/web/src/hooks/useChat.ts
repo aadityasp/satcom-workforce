@@ -277,7 +277,7 @@ export function useChat(options: UseChatOptions = {}) {
           updateMessage(data.threadId, messageId, {
             content: data.content,
             isEdited: true,
-            editedAt: data.updatedAt,
+            editedAt: data.editedAt,
           });
         }
         return data;

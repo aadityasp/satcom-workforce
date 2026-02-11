@@ -10,9 +10,10 @@ export class CreateTimesheetDto {
   @IsUUID()
   projectId: string;
 
-  @ApiProperty({ description: 'Task ID' })
+  @ApiPropertyOptional({ description: 'Task ID' })
+  @IsOptional()
   @IsUUID()
-  taskId: string;
+  taskId?: string;
 
   @ApiProperty({ description: 'Start time (ISO datetime string, e.g., 2026-01-24T09:00:00)' })
   @IsDateString()
