@@ -6,7 +6,15 @@ import { ArrowLeft, Plus, Calendar, CheckCircle, Clock, XCircle, X } from 'lucid
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
+interface LeaveType {
+  id: string;
+  name: string;
+  code: string;
+  maxDaysPerYear: number;
+}
+
 interface LeaveBalance {
+  id: string;
   type: string;
   used: number;
   total: number;
@@ -27,10 +35,11 @@ export default function LeavesPage() {
   const { user, _hasHydrated } = useAuthStore();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [formData, setFormData] = useState({
-    type: 'Annual',
+    leaveTypeId: '',
     startDate: '',
     endDate: '',
     reason: '',
@@ -47,47 +56,47 @@ export default function LeavesPage() {
   const fetchLeaveData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [balanceRes, requestsRes] = await Promise.all([
+      const [typesRes, balanceRes, requestsRes] = await Promise.all([
+        api.get<any>('/leaves/types'),
         api.get<any>('/leaves/balance'),
         api.get<any>('/leaves/requests'),
       ]);
 
-      if (balanceRes.success && balanceRes.data) {
-        const balData = balanceRes.data;
-        // Handle both array format and object format from the API
-        if (Array.isArray(balData)) {
-          setBalances(balData.map((b: any) => ({
-            type: b.type || b.leaveType || 'Leave',
-            used: b.used ?? b.usedDays ?? 0,
-            total: b.total ?? b.totalDays ?? b.entitled ?? 0,
-          })));
-        } else if (balData.balances) {
-          setBalances(balData.balances.map((b: any) => ({
-            type: b.type || b.leaveType || 'Leave',
-            used: b.used ?? b.usedDays ?? 0,
-            total: b.total ?? b.totalDays ?? b.entitled ?? 0,
-          })));
-        } else {
-          // Object with leave type keys e.g. { annual: { used: 5, total: 20 }, ... }
-          const mapped = Object.entries(balData).map(([key, val]: [string, any]) => ({
-            type: key.charAt(0).toUpperCase() + key.slice(1),
-            used: val.used ?? val.usedDays ?? 0,
-            total: val.total ?? val.totalDays ?? val.entitled ?? 0,
-          }));
-          if (mapped.length > 0 && typeof mapped[0].total === 'number') {
-            setBalances(mapped);
-          }
+      // Parse leave types
+      if (typesRes.success && typesRes.data) {
+        const types = Array.isArray(typesRes.data) ? typesRes.data : [];
+        setLeaveTypes(types);
+        // Set default selected type
+        if (types.length > 0 && !formData.leaveTypeId) {
+          setFormData(prev => ({ ...prev, leaveTypeId: types[0].id }));
         }
       }
 
+      // Parse leave balances
+      // Backend returns: { success: true, data: { balances: [...] } }
+      // Each balance has: { id, allocated (Decimal), used (Decimal), pending (Decimal), leaveType: { id, name, code } }
+      if (balanceRes.success && balanceRes.data) {
+        const balData = balanceRes.data;
+        const rawBalances = Array.isArray(balData) ? balData : (balData.balances || []);
+        setBalances(rawBalances.map((b: any) => ({
+          id: b.id,
+          type: typeof b.leaveType === 'object' ? (b.leaveType?.name || 'Leave') : (b.leaveType || b.type || 'Leave'),
+          used: Number(b.used ?? 0),
+          total: Number(b.allocated ?? b.total ?? 0),
+        })));
+      }
+
+      // Parse leave requests
+      // Backend returns: { success: true, data: [...], meta: {...} }
+      // Each request has: { id, startDate, endDate, totalDays, reason, status, leaveType: { id, name } }
       if (requestsRes.success && requestsRes.data) {
-        const reqData = Array.isArray(requestsRes.data) ? requestsRes.data : (requestsRes.data?.items || requestsRes.data?.requests || []);
+        const reqData = Array.isArray(requestsRes.data) ? requestsRes.data : (requestsRes.data?.data || []);
         setLeaves(reqData.map((r: any) => ({
           id: r.id,
-          type: r.type || r.leaveType || 'Leave',
-          startDate: r.startDate || r.from || r.fromDate,
-          endDate: r.endDate || r.to || r.toDate,
-          days: r.days || r.numberOfDays || r.totalDays || 1,
+          type: typeof r.leaveType === 'object' ? (r.leaveType?.name || 'Leave') : (r.leaveType || r.type || 'Leave'),
+          startDate: r.startDate,
+          endDate: r.endDate,
+          days: Number(r.totalDays || r.days || 1),
           status: r.status || 'Pending',
           reason: r.reason,
         })));
@@ -107,8 +116,16 @@ export default function LeavesPage() {
 
   const handleRequestLeave = async () => {
     setFormError('');
+    if (!formData.leaveTypeId) {
+      setFormError('Please select a leave type.');
+      return;
+    }
     if (!formData.startDate || !formData.endDate) {
       setFormError('Start date and end date are required.');
+      return;
+    }
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      setFormError('End date must be on or after start date.');
       return;
     }
     if (!formData.reason.trim()) {
@@ -118,14 +135,14 @@ export default function LeavesPage() {
     setFormLoading(true);
     try {
       const res = await api.post<any>('/leaves/request', {
-        type: formData.type,
+        leaveTypeId: formData.leaveTypeId,
         startDate: formData.startDate,
         endDate: formData.endDate,
         reason: formData.reason,
       });
       if (res.success) {
         setShowRequestModal(false);
-        setFormData({ type: 'Annual', startDate: '', endDate: '', reason: '' });
+        setFormData(prev => ({ ...prev, startDate: '', endDate: '', reason: '' }));
         fetchLeaveData();
       } else {
         setFormError(res.error?.message || 'Failed to submit leave request');
@@ -193,7 +210,7 @@ export default function LeavesPage() {
             {/* Leave Balances */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {balances.length > 0 ? balances.map((bal) => (
-                <div key={bal.type} className="bg-white rounded-xl border border-silver-200 p-4">
+                <div key={bal.id || bal.type} className="bg-white rounded-xl border border-silver-200 p-4">
                   <p className="text-sm text-silver-500">{bal.type} Leave</p>
                   <div className="mt-2 flex items-end gap-1">
                     <span className="text-2xl font-bold text-navy-900">{bal.total - bal.used}</span>
@@ -272,14 +289,19 @@ export default function LeavesPage() {
               <div>
                 <label className="block text-sm font-medium text-navy-700 mb-1">Leave Type</label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  value={formData.leaveTypeId}
+                  onChange={(e) => setFormData({ ...formData, leaveTypeId: e.target.value })}
                   className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="Annual">Annual Leave</option>
-                  <option value="Sick">Sick Leave</option>
-                  <option value="Casual">Casual Leave</option>
-                  <option value="WFH">Work From Home</option>
+                  {leaveTypes.length > 0 ? (
+                    leaveTypes.map((lt) => (
+                      <option key={lt.id} value={lt.id}>{lt.name}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="">No leave types configured</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -297,6 +319,7 @@ export default function LeavesPage() {
                   <input
                     type="date"
                     value={formData.endDate}
+                    min={formData.startDate || undefined}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -317,7 +340,7 @@ export default function LeavesPage() {
               <button onClick={() => setShowRequestModal(false)} className="px-4 py-2 text-sm border border-silver-200 rounded-lg hover:bg-silver-50">
                 Cancel
               </button>
-              <button onClick={handleRequestLeave} disabled={formLoading} className="btn-primary text-sm px-6 py-2 disabled:opacity-50">
+              <button onClick={handleRequestLeave} disabled={formLoading || !formData.leaveTypeId} className="btn-primary text-sm px-6 py-2 disabled:opacity-50">
                 {formLoading ? 'Submitting...' : 'Submit Request'}
               </button>
             </div>
