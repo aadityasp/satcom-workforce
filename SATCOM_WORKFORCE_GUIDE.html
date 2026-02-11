@@ -1514,19 +1514,54 @@
         <span class="access-tag tag-superadmin">SuperAdmin</span>
         <span class="access-tag tag-hr">HR</span>
       </div>
-      <p>Administrators can create new user accounts, assign roles, set department and manager assignments, and manage account status. The system supports search, filtering by role/status, and pagination for large organizations.</p>
+      <p>SuperAdmins can create new user accounts, assign roles, set department and manager assignments, and manage account status. HR users can view and search the user list. The system supports search, filtering by role/status, and pagination for large organizations.</p>
+
+      <div class="highlight-box highlight-warning">
+        <strong>Important:</strong> User creation is done via <code>POST /api/v1/users</code> (not <code>/auth/register</code>). Only SuperAdmin can create users. The request body requires a nested <code>profile</code> object with employee details.
+      </div>
+
+      <h4 style="margin: 16px 0 8px; font-size: 15px; color: var(--navy-900);">Add New User (Step by Step)</h4>
+      <ol class="steps-list">
+        <li><strong>Navigate to User Management</strong> &mdash; Go to Admin &rarr; Users. Only SuperAdmin sees the "Add User" button.</li>
+        <li><strong>Enter Employee Code</strong> &mdash; A unique identifier like EMP001 (required, must be unique across the system).</li>
+        <li><strong>Set Join Date</strong> &mdash; Defaults to today's date. Can be backdated for existing employees.</li>
+        <li><strong>Enter Name</strong> &mdash; First Name and Last Name (both required).</li>
+        <li><strong>Enter Email</strong> &mdash; Must be unique. Will be used for login. Stored in lowercase.</li>
+        <li><strong>Set Password</strong> &mdash; Minimum 8 characters. The user can change this later via Password Reset.</li>
+        <li><strong>Add Phone (optional)</strong> &mdash; Employee's contact number.</li>
+        <li><strong>Select Role</strong> &mdash; Employee (default), Manager, HR, or Super Admin.</li>
+        <li><strong>Set Department &amp; Designation (optional)</strong> &mdash; e.g., "Engineering" / "Software Engineer".</li>
+        <li><strong>Submit</strong> &mdash; The system creates the user with a profile, assigns initial leave balances, and generates an audit log entry.</li>
+      </ol>
 
       <table class="kv-table">
-        <tr><td class="label">Create User</td><td>Email, name, role, department, manager, designation, hourly rate</td></tr>
-        <tr><td class="label">Edit User</td><td>Update any profile field, change role, reassign manager</td></tr>
-        <tr><td class="label">Deactivate</td><td>Soft-disable accounts while preserving data</td></tr>
-        <tr><td class="label">Search &amp; Filter</td><td>Search by name/email, filter by role and status</td></tr>
-        <tr><td class="label">Profile</td><td>Every user can edit their own profile (name, phone, avatar)</td></tr>
+        <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+        <tr><td class="label">Employee Code</td><td>Yes</td><td>Unique employee identifier (e.g., EMP001, SAT-042)</td></tr>
+        <tr><td class="label">First Name</td><td>Yes</td><td>Employee's first name</td></tr>
+        <tr><td class="label">Last Name</td><td>Yes</td><td>Employee's last name</td></tr>
+        <tr><td class="label">Email</td><td>Yes</td><td>Unique company email for login</td></tr>
+        <tr><td class="label">Password</td><td>Yes</td><td>Minimum 8 characters</td></tr>
+        <tr><td class="label">Join Date</td><td>Yes</td><td>Employment start date (auto-defaults to today)</td></tr>
+        <tr><td class="label">Designation</td><td>Yes</td><td>Job title (e.g., Software Engineer, Team Lead)</td></tr>
+        <tr><td class="label">Phone</td><td>No</td><td>Contact phone number</td></tr>
+        <tr><td class="label">Role</td><td>No</td><td>Defaults to Employee. Options: Employee, Manager, HR, SuperAdmin</td></tr>
+        <tr><td class="label">Department</td><td>No</td><td>Organizational department</td></tr>
+      </table>
+
+      <h4 style="margin: 16px 0 8px; font-size: 15px; color: var(--navy-900);">Other Operations</h4>
+      <table class="kv-table">
+        <tr><td class="label">Edit User</td><td>Update role, profile fields (SuperAdmin only)</td></tr>
+        <tr><td class="label">Activate/Deactivate</td><td>Toggle account status while preserving data (SuperAdmin only)</td></tr>
+        <tr><td class="label">Search &amp; Filter</td><td>Search by name/email/employee code, filter by role (HR/SuperAdmin)</td></tr>
+        <tr><td class="label">View Details</td><td>See full user profile via action menu (HR/SuperAdmin)</td></tr>
+        <tr><td class="label">Own Profile</td><td>Every user can update their own name, phone via Profile settings</td></tr>
       </table>
 
       <div class="route-info">
         <span class="route-badge route-web">Web: /admin/users</span>
-        <span class="route-badge route-api">API: /users</span>
+        <span class="route-badge route-api">API: POST /users (create)</span>
+        <span class="route-badge route-api">API: GET /users (list)</span>
+        <span class="route-badge route-api">API: PATCH /users/:id (update)</span>
       </div>
     </div>
   </div>

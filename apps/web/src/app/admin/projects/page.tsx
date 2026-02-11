@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, FolderOpen, Edit2, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, FolderOpen, Edit2, Trash2, ChevronDown, ChevronRight, X, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 
@@ -32,6 +32,19 @@ interface Project {
   };
 }
 
+interface ProjectFormData {
+  name: string;
+  code: string;
+  description: string;
+}
+
+interface TaskFormData {
+  projectId: string;
+  name: string;
+  code: string;
+  description: string;
+}
+
 export default function AdminProjectsPage() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -40,6 +53,20 @@ export default function AdminProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+
+  // Modal state
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectForm, setProjectForm] = useState<ProjectFormData>({ name: '', code: '', description: '' });
+  const [projectFormError, setProjectFormError] = useState<string | null>(null);
+  const [isProjectSubmitting, setIsProjectSubmitting] = useState(false);
+
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskParentProjectId, setTaskParentProjectId] = useState<string | null>(null);
+  const [taskForm, setTaskForm] = useState<TaskFormData>({ projectId: '', name: '', code: '', description: '' });
+  const [taskFormError, setTaskFormError] = useState<string | null>(null);
+  const [isTaskSubmitting, setIsTaskSubmitting] = useState(false);
 
   // Check admin access
   useEffect(() => {
@@ -80,6 +107,146 @@ export default function AdminProjectsPage() {
     }
   }, [fetchProjects]);
 
+  // --- Project modal handlers ---
+
+  const openCreateProjectModal = () => {
+    setEditingProject(null);
+    setProjectForm({ name: '', code: '', description: '' });
+    setProjectFormError(null);
+    setShowProjectModal(true);
+  };
+
+  const openEditProjectModal = (project: Project) => {
+    setEditingProject(project);
+    setProjectForm({ name: project.name, code: project.code, description: project.description || '' });
+    setProjectFormError(null);
+    setShowProjectModal(true);
+  };
+
+  const closeProjectModal = () => {
+    setShowProjectModal(false);
+    setEditingProject(null);
+    setProjectFormError(null);
+  };
+
+  const handleProjectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProjectFormError(null);
+
+    if (!projectForm.name.trim() || !projectForm.code.trim()) {
+      setProjectFormError('Name and code are required.');
+      return;
+    }
+    if (projectForm.name.trim().length < 3) {
+      setProjectFormError('Project name must be at least 3 characters.');
+      return;
+    }
+    if (projectForm.code.trim().length < 2) {
+      setProjectFormError('Project code must be at least 2 characters.');
+      return;
+    }
+
+    setIsProjectSubmitting(true);
+    try {
+      const payload = {
+        name: projectForm.name.trim(),
+        code: projectForm.code.trim(),
+        description: projectForm.description.trim() || undefined,
+      };
+
+      let response;
+      if (editingProject) {
+        response = await api.patch(`/admin/projects/${editingProject.id}`, payload);
+      } else {
+        response = await api.post('/admin/projects', payload);
+      }
+
+      if (response.success) {
+        closeProjectModal();
+        fetchProjects();
+      } else {
+        setProjectFormError(response.error?.message || 'Failed to save project.');
+      }
+    } catch {
+      setProjectFormError('Network error. Please try again.');
+    } finally {
+      setIsProjectSubmitting(false);
+    }
+  };
+
+  // --- Task modal handlers ---
+
+  const openCreateTaskModal = (projectId: string) => {
+    setEditingTask(null);
+    setTaskParentProjectId(projectId);
+    setTaskForm({ projectId, name: '', code: '', description: '' });
+    setTaskFormError(null);
+    setShowTaskModal(true);
+  };
+
+  const openEditTaskModal = (task: Task, projectId: string) => {
+    setEditingTask(task);
+    setTaskParentProjectId(projectId);
+    setTaskForm({ projectId, name: task.name, code: task.code, description: task.description || '' });
+    setTaskFormError(null);
+    setShowTaskModal(true);
+  };
+
+  const closeTaskModal = () => {
+    setShowTaskModal(false);
+    setEditingTask(null);
+    setTaskParentProjectId(null);
+    setTaskFormError(null);
+  };
+
+  const handleTaskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTaskFormError(null);
+
+    if (!taskForm.name.trim() || !taskForm.code.trim()) {
+      setTaskFormError('Name and code are required.');
+      return;
+    }
+    if (taskForm.name.trim().length < 3) {
+      setTaskFormError('Task name must be at least 3 characters.');
+      return;
+    }
+    if (taskForm.code.trim().length < 2) {
+      setTaskFormError('Task code must be at least 2 characters.');
+      return;
+    }
+
+    setIsTaskSubmitting(true);
+    try {
+      let response;
+      if (editingTask) {
+        response = await api.patch(`/admin/projects/tasks/${editingTask.id}`, {
+          name: taskForm.name.trim(),
+          code: taskForm.code.trim(),
+          description: taskForm.description.trim() || undefined,
+        });
+      } else {
+        response = await api.post('/admin/projects/tasks', {
+          projectId: taskForm.projectId,
+          name: taskForm.name.trim(),
+          code: taskForm.code.trim(),
+          description: taskForm.description.trim() || undefined,
+        });
+      }
+
+      if (response.success) {
+        closeTaskModal();
+        fetchProjects();
+      } else {
+        setTaskFormError(response.error?.message || 'Failed to save task.');
+      }
+    } catch {
+      setTaskFormError('Network error. Please try again.');
+    } finally {
+      setIsTaskSubmitting(false);
+    }
+  };
+
   if (user?.role !== 'SuperAdmin') {
     return null;
   }
@@ -96,7 +263,10 @@ export default function AdminProjectsPage() {
               </button>
               <h1 className="text-lg font-semibold text-navy-900">Manage Projects</h1>
             </div>
-            <button className="btn-primary flex items-center gap-2">
+            <button
+              onClick={openCreateProjectModal}
+              className="btn-primary flex items-center gap-2"
+            >
               <Plus size={18} />
               New Project
             </button>
@@ -171,12 +341,17 @@ export default function AdminProjectsPage() {
                     </div>
                   </button>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-silver-100 rounded-lg text-silver-500">
+                    <button
+                      onClick={() => openEditProjectModal(project)}
+                      className="p-2 hover:bg-silver-100 rounded-lg text-silver-500"
+                      title="Edit project"
+                    >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteProject(project.id)}
                       className="p-2 hover:bg-red-50 rounded-lg text-red-500"
+                      title="Deactivate project"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -188,7 +363,10 @@ export default function AdminProjectsPage() {
                   <div className="border-t border-silver-100 bg-silver-50 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-silver-600">Tasks</h4>
-                      <button className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                      <button
+                        onClick={() => openCreateTaskModal(project.id)}
+                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
                         <Plus size={14} /> Add Task
                       </button>
                     </div>
@@ -211,12 +389,17 @@ export default function AdminProjectsPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-1">
-                              <button className="p-1.5 hover:bg-silver-100 rounded text-silver-500">
+                              <button
+                                onClick={() => openEditTaskModal(task, project.id)}
+                                className="p-1.5 hover:bg-silver-100 rounded text-silver-500"
+                                title="Edit task"
+                              >
                                 <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeleteTask(task.id)}
                                 className="p-1.5 hover:bg-red-50 rounded text-red-500"
+                                title="Deactivate task"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -232,6 +415,160 @@ export default function AdminProjectsPage() {
           )}
         </div>
       </main>
+
+      {/* Create/Edit Project Modal */}
+      {showProjectModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-silver-200">
+              <h2 className="text-lg font-semibold text-navy-900">
+                {editingProject ? 'Edit Project' : 'New Project'}
+              </h2>
+              <button onClick={closeProjectModal} className="p-2 hover:bg-silver-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleProjectSubmit} className="p-6 space-y-4">
+              {projectFormError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                  {projectFormError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">
+                  Project Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={projectForm.name}
+                  onChange={(e) => setProjectForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g., Satellite Operations"
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  maxLength={50}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">
+                  Project Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={projectForm.code}
+                  onChange={(e) => setProjectForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
+                  placeholder="e.g., SAT-OPS"
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+                  maxLength={10}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">Description</label>
+                <textarea
+                  value={projectForm.description}
+                  onChange={(e) => setProjectForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="Optional project description"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeProjectModal}
+                  className="px-4 py-2 text-sm font-medium text-silver-600 bg-white border border-silver-300 rounded-lg hover:bg-silver-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProjectSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isProjectSubmitting && <Loader2 size={16} className="animate-spin" />}
+                  {editingProject ? 'Save Changes' : 'Create Project'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create/Edit Task Modal */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-silver-200">
+              <h2 className="text-lg font-semibold text-navy-900">
+                {editingTask ? 'Edit Task' : 'New Task'}
+              </h2>
+              <button onClick={closeTaskModal} className="p-2 hover:bg-silver-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleTaskSubmit} className="p-6 space-y-4">
+              {taskFormError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                  {taskFormError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">
+                  Task Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={taskForm.name}
+                  onChange={(e) => setTaskForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g., Development"
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  maxLength={50}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">
+                  Task Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={taskForm.code}
+                  onChange={(e) => setTaskForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
+                  placeholder="e.g., DEV"
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono"
+                  maxLength={10}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-1">Description</label>
+                <textarea
+                  value={taskForm.description}
+                  onChange={(e) => setTaskForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="Optional task description"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-silver-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeTaskModal}
+                  className="px-4 py-2 text-sm font-medium text-silver-600 bg-white border border-silver-300 rounded-lg hover:bg-silver-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isTaskSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isTaskSubmitting && <Loader2 size={16} className="animate-spin" />}
+                  {editingTask ? 'Save Changes' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

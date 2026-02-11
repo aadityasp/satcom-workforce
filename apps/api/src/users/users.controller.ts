@@ -108,11 +108,12 @@ export class UsersController {
 
   /**
    * Get user by ID
+   * AUTH-1 fix: Verify requesting user belongs to the same company
    */
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id') id: string) {
-    const result = await this.usersService.findOne(id);
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const result = await this.usersService.findOne(id, user.companyId);
     return { success: true, data: result };
   }
 

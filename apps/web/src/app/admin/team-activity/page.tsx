@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -45,11 +45,7 @@ export default function TeamActivityPage() {
   const [activities, setActivities] = useState<TeamActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTeamActivity();
-  }, [date]);
-
-  const fetchTeamActivity = async () => {
+  const fetchTeamActivity = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await api.get<{ activities: TeamActivity[] }>(
@@ -64,7 +60,11 @@ export default function TeamActivityPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [date]);
+
+  useEffect(() => {
+    fetchTeamActivity();
+  }, [fetchTeamActivity]);
 
   const goToPreviousDay = () => setDate(subDays(date, 1));
   const goToNextDay = () => setDate(addDays(date, 1));

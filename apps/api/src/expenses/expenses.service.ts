@@ -39,6 +39,11 @@ export class ExpensesService {
     companyId: string,
     dto: CreateExpenseDto
   ) {
+    // EXP-1 fix: Validate that expense amount is positive
+    if (!dto.amount || dto.amount <= 0) {
+      throw new BadRequestException('Expense amount must be a positive number');
+    }
+
     let receiptUrl: string | undefined;
 
     // Upload receipt if provided
@@ -166,6 +171,11 @@ export class ExpensesService {
 
     if (expense.status !== ExpenseStatus.Pending) {
       throw new BadRequestException('Expense is not pending approval');
+    }
+
+    // EXP-2 fix: Prevent self-approval of expenses
+    if (expense.userId === approverId) {
+      throw new BadRequestException('Cannot approve your own expense submission');
     }
 
     const updated = await this.prisma.expense.update({

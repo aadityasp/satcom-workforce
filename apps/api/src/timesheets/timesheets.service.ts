@@ -28,13 +28,30 @@ export class TimesheetsService {
    * Create a new timesheet entry
    */
   async create(userId: string, createDto: CreateTimesheetDto) {
+    // TS-1 fix: Validate that the date is not in the future
+    const entryDate = new Date(createDto.date);
+    const today = startOfDay(new Date());
+    if (entryDate > today) {
+      throw new BadRequestException('Cannot create timesheet entries for future dates');
+    }
+
     // Calculate minutes from start/end times
     const startTime = new Date(createDto.startTime);
     const endTime = new Date(createDto.endTime);
     const minutes = differenceInMinutes(endTime, startTime);
 
+    // TS-1 fix: Validate minutes are not negative
+    if (minutes < 0) {
+      throw new BadRequestException('Minutes cannot be negative. End time must be after start time');
+    }
+
     if (minutes <= 0) {
       throw new BadRequestException('End time must be after start time');
+    }
+
+    // TS-1 fix: Validate minutes do not exceed 1440 (24 hours)
+    if (minutes > 1440) {
+      throw new BadRequestException('Timesheet entry cannot exceed 1440 minutes (24 hours)');
     }
 
     // Validate taskId is required (per database schema)
@@ -213,8 +230,17 @@ export class TimesheetsService {
       const endTime = new Date(updateDto.endTime);
       const diff = differenceInMinutes(endTime, startTime);
 
+      // TS-1 fix: Validate minutes on update
+      if (diff < 0) {
+        throw new BadRequestException('Minutes cannot be negative. End time must be after start time');
+      }
+
       if (diff <= 0) {
         throw new BadRequestException('End time must be after start time');
+      }
+
+      if (diff > 1440) {
+        throw new BadRequestException('Timesheet entry cannot exceed 1440 minutes (24 hours)');
       }
       minutes = diff;
     }

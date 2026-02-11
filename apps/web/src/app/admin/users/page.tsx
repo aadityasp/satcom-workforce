@@ -47,6 +47,9 @@ export default function UsersPage() {
     role: 'Employee',
     department: '',
     designation: '',
+    employeeCode: '',
+    joinDate: new Date().toISOString().split('T')[0],
+    phone: '',
   });
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
@@ -109,7 +112,7 @@ export default function UsersPage() {
   };
 
   const resetForm = () => {
-    setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'Employee', department: '', designation: '' });
+    setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'Employee', department: '', designation: '', employeeCode: '', joinDate: new Date().toISOString().split('T')[0], phone: '' });
     setFormError('');
   };
 
@@ -119,23 +122,32 @@ export default function UsersPage() {
       setFormError('Email, password, first name, and last name are required.');
       return;
     }
+    if (!formData.employeeCode) {
+      setFormError('Employee code is required.');
+      return;
+    }
     setFormLoading(true);
     try {
-      const res = await api.post<any>('/auth/register', {
+      const res = await api.post<any>('/users', {
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        phone: formData.phone || undefined,
         role: formData.role,
-        department: formData.department || undefined,
-        designation: formData.designation || undefined,
+        profile: {
+          employeeCode: formData.employeeCode,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          designation: formData.designation || 'Employee',
+          department: formData.department || undefined,
+          joinDate: formData.joinDate || new Date().toISOString().split('T')[0],
+        },
       });
       if (res.success) {
         setShowAddModal(false);
         resetForm();
         fetchUsers();
       } else {
-        setFormError((res as any).message || 'Failed to create user');
+        setFormError(res.error?.message || 'Failed to create user');
       }
     } catch (error: any) {
       setFormError(error?.message || 'Failed to create user');
@@ -164,7 +176,7 @@ export default function UsersPage() {
         setSelectedUser(null);
         fetchUsers();
       } else {
-        setFormError((res as any).message || 'Failed to update user');
+        setFormError(res.error?.message || 'Failed to update user');
       }
     } catch (error: any) {
       setFormError(error?.message || 'Failed to update user');
@@ -193,6 +205,9 @@ export default function UsersPage() {
       role: u.role,
       department: u.profile?.department || '',
       designation: u.profile?.designation || '',
+      employeeCode: (u as any).profile?.employeeCode || '',
+      joinDate: (u as any).profile?.joinDate ? new Date((u as any).profile.joinDate).toISOString().split('T')[0] : '',
+      phone: (u as any).phone || '',
     });
     setFormError('');
     setShowEditModal(true);
@@ -451,6 +466,27 @@ export default function UsersPage() {
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">Employee Code *</label>
+                  <input
+                    type="text"
+                    value={formData.employeeCode}
+                    onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                    className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. EMP001"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">Join Date</label>
+                  <input
+                    type="date"
+                    value={formData.joinDate}
+                    onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-navy-700 mb-1">Email *</label>
                 <input
@@ -460,15 +496,27 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-navy-700 mb-1">Password *</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Min 8 characters"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">Password *</label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Min 8 characters"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-navy-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="+91..."
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-navy-700 mb-1">Role</label>
@@ -500,6 +548,7 @@ export default function UsersPage() {
                     value={formData.designation}
                     onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                     className="w-full px-3 py-2 border border-silver-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. Software Engineer"
                   />
                 </div>
               </div>

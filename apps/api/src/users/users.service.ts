@@ -8,6 +8,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '@prisma/client';
@@ -150,8 +151,9 @@ export class UsersService {
 
   /**
    * Find user by ID
+   * AUTH-1 fix: Verify the requesting user belongs to the same company
    */
-  async findOne(id: string) {
+  async findOne(id: string, companyId?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: { profile: true },
@@ -159,6 +161,11 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    // AUTH-1 fix: If companyId is provided, enforce same-company access
+    if (companyId && user.companyId !== companyId) {
+      throw new ForbiddenException('Access denied: user belongs to a different company');
     }
 
     return this.sanitizeUser(user);

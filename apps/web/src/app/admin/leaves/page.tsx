@@ -47,8 +47,8 @@ export default function AdminLeavesPage() {
             setLeaves(Array.isArray(response.data) ? response.data : []);
           }
         } else {
-          // For other filters, we'd need a different endpoint that returns all leaves
-          // For now, show empty for non-pending
+          // No admin-level endpoint for approved/rejected/all leaves yet.
+          // Set leaves to empty and let the UI show a "coming soon" placeholder.
           setLeaves([]);
         }
       } catch (error) {
@@ -174,10 +174,20 @@ export default function AdminLeavesPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent" />
           </div>
+        ) : filter !== 'Pending' ? (
+          <div className="bg-white rounded-xl border border-silver-200 p-12 text-center">
+            <Clock size={48} className="mx-auto text-silver-300 mb-4" />
+            <p className="text-navy-900 font-medium mb-1">Coming Soon</p>
+            <p className="text-silver-500 text-sm">
+              Viewing {filter.toLowerCase()} leave requests will be available in a future update.
+              <br />
+              Use the <button onClick={() => setFilter('Pending')} className="text-blue-600 hover:underline font-medium">Pending</button> tab to manage requests awaiting approval.
+            </p>
+          </div>
         ) : leaves.length === 0 ? (
           <div className="bg-white rounded-xl border border-silver-200 p-12 text-center">
             <Calendar size={48} className="mx-auto text-silver-300 mb-4" />
-            <p className="text-silver-500">No {filter.toLowerCase()} leave requests</p>
+            <p className="text-silver-500">No pending leave requests</p>
           </div>
         ) : (
           <div className="space-y-4">

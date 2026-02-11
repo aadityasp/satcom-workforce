@@ -53,12 +53,23 @@ export class AttendanceService {
     });
 
     if (existingDay) {
-      // Only block if currently checked in (not checked out)
-      const hasActiveCheckIn = existingDay.events.some(
-        (e) => e.type === AttendanceEventType.CheckIn && !e.isOverride,
-      );
-      if (hasActiveCheckIn && !existingDay.isComplete) {
-        throw new BadRequestException('Already checked in today');
+      // ATT-1 fix: Properly detect open check-in session (no corresponding check-out)
+      // Sort check-ins descending to find the most recent one
+      const sortedCheckIns = existingDay.events
+        .filter((e) => e.type === AttendanceEventType.CheckIn)
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      const lastCheckIn = sortedCheckIns[0];
+
+      if (lastCheckIn) {
+        // Check if there is a check-out event AFTER the most recent check-in
+        const hasCheckOutAfterLastCheckIn = existingDay.events.some(
+          (e) =>
+            e.type === AttendanceEventType.CheckOut &&
+            e.timestamp.getTime() > lastCheckIn.timestamp.getTime(),
+        );
+        if (!hasCheckOutAfterLastCheckIn) {
+          throw new BadRequestException('Already checked in today. Please check out before checking in again.');
+        }
       }
       // If day was complete (checked out), allow re-checking in
     }
@@ -74,50 +85,78 @@ export class AttendanceService {
       );
     }
 
-    // Create or update attendance day - reset isComplete if re-checking in
-    const attendanceDay = await this.prisma.attendanceDay.upsert({
-      where: {
-        userId_date: {
+    // ATT-1 fix: Wrap upsert + event creation in a transaction for atomicity
+    const { attendanceDay, event } = await this.prisma.$transaction(async (tx) => {
+      // Re-check for open session inside transaction to prevent race conditions
+      const dayInTx = await tx.attendanceDay.findUnique({
+        where: { userId_date: { userId, date: today } },
+        include: { events: true },
+      });
+
+      if (dayInTx) {
+        const sortedCIs = dayInTx.events
+          .filter((e) => e.type === AttendanceEventType.CheckIn)
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const lastCI = sortedCIs[0];
+        if (lastCI) {
+          const hasCOAfterLastCI = dayInTx.events.some(
+            (e) =>
+              e.type === AttendanceEventType.CheckOut &&
+              e.timestamp.getTime() > lastCI.timestamp.getTime(),
+          );
+          if (!hasCOAfterLastCI) {
+            throw new BadRequestException('Already checked in today. Please check out before checking in again.');
+          }
+        }
+      }
+
+      // Create or update attendance day - reset isComplete if re-checking in
+      const txDay = await tx.attendanceDay.upsert({
+        where: {
+          userId_date: {
+            userId,
+            date: today,
+          },
+        },
+        create: {
           userId,
           date: today,
         },
-      },
-      create: {
-        userId,
-        date: today,
-      },
-      update: {
-        isComplete: false, // Reset to allow new session
-      },
-    });
-
-    // Create check-in event
-    const event = await this.prisma.attendanceEvent.create({
-      data: {
-        attendanceDayId: attendanceDay.id,
-        type: AttendanceEventType.CheckIn,
-        timestamp: new Date(),
-        workMode: checkInDto.workMode,
-        latitude: checkInDto.latitude,
-        longitude: checkInDto.longitude,
-        verificationStatus,
-        deviceFingerprint: checkInDto.deviceFingerprint,
-        notes: checkInDto.notes,
-      },
-    });
-
-    // Create audit log
-    await this.prisma.auditLog.create({
-      data: {
-        actorId: userId,
-        action: 'AttendanceCheckIn',
-        entityType: 'AttendanceEvent',
-        entityId: event.id,
-        after: {
-          workMode: checkInDto.workMode,
-          verificationStatus,
+        update: {
+          isComplete: false, // Reset to allow new session
         },
-      },
+      });
+
+      // Create check-in event
+      const txEvent = await tx.attendanceEvent.create({
+        data: {
+          attendanceDayId: txDay.id,
+          type: AttendanceEventType.CheckIn,
+          timestamp: new Date(),
+          workMode: checkInDto.workMode,
+          latitude: checkInDto.latitude,
+          longitude: checkInDto.longitude,
+          verificationStatus,
+          deviceFingerprint: checkInDto.deviceFingerprint,
+          notes: checkInDto.notes,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          actorId: userId,
+          action: 'AttendanceCheckIn',
+          entityType: 'AttendanceEvent',
+          entityId: txEvent.id,
+          after: {
+            workMode: checkInDto.workMode,
+            verificationStatus,
+          },
+        },
+      });
+
+      return { attendanceDay: txDay, event: txEvent };
     });
 
     return {

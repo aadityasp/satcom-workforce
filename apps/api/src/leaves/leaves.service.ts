@@ -52,6 +52,27 @@ export class LeavesService {
       throw new BadRequestException('Overlapping leave request exists');
     }
 
+    // LV-1 fix: Check leave balance before creating request
+    const currentYear = new Date().getFullYear();
+    const balance = await this.prisma.leaveBalance.findFirst({
+      where: {
+        userId,
+        leaveTypeId: data.leaveTypeId,
+        year: currentYear,
+      },
+    });
+
+    if (!balance) {
+      throw new BadRequestException('No leave balance found for this leave type');
+    }
+
+    const available = Number(balance.allocated) - Number(balance.used);
+    if (totalDays > available) {
+      throw new BadRequestException(
+        `Insufficient leave balance. Available: ${available} days, Requested: ${totalDays} days`,
+      );
+    }
+
     return this.prisma.leaveRequest.create({
       data: {
         userId,
@@ -72,13 +93,44 @@ export class LeavesService {
       throw new BadRequestException('Request is not pending');
     }
 
-    return this.prisma.leaveRequest.update({
-      where: { id: requestId },
-      data: {
-        status: LeaveRequestStatus.Approved,
-        approvedBy: approverId,
-        approvedAt: new Date(),
-      },
+    // LV-1 fix: Re-check balance and deduct upon approval (within a transaction)
+    const currentYear = new Date().getFullYear();
+    return this.prisma.$transaction(async (tx) => {
+      const balance = await tx.leaveBalance.findFirst({
+        where: {
+          userId: request.userId,
+          leaveTypeId: request.leaveTypeId,
+          year: currentYear,
+        },
+      });
+
+      if (!balance) {
+        throw new BadRequestException('No leave balance found for this leave type');
+      }
+
+      const available = Number(balance.allocated) - Number(balance.used);
+      const requestedDays = Number(request.totalDays);
+      if (requestedDays > available) {
+        throw new BadRequestException(
+          `Insufficient leave balance. Available: ${available} days, Requested: ${requestedDays} days`,
+        );
+      }
+
+      // Deduct balance
+      await tx.leaveBalance.update({
+        where: { id: balance.id },
+        data: { used: { increment: requestedDays } },
+      });
+
+      // Approve the request
+      return tx.leaveRequest.update({
+        where: { id: requestId },
+        data: {
+          status: LeaveRequestStatus.Approved,
+          approvedBy: approverId,
+          approvedAt: new Date(),
+        },
+      });
     });
   }
 

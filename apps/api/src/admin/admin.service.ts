@@ -1,7 +1,7 @@
 /**
  * Admin Service - Policies, settings, and audit log management
  */
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -13,6 +13,26 @@ export class AdminService {
   }
 
   async updateWorkPolicy(companyId: string, data: any, actorId: string) {
+    // ADM-1 fix: Validate policy values are positive numbers
+    if (data.standardWorkHours !== undefined && (typeof data.standardWorkHours !== 'number' || data.standardWorkHours <= 0)) {
+      throw new BadRequestException('standardWorkHours must be a positive number');
+    }
+    if (data.maxHoursPerDay !== undefined && (typeof data.maxHoursPerDay !== 'number' || data.maxHoursPerDay <= 0)) {
+      throw new BadRequestException('maxHoursPerDay must be a positive number');
+    }
+    if (data.breakDurationMinutes !== undefined && (typeof data.breakDurationMinutes !== 'number' || data.breakDurationMinutes < 0)) {
+      throw new BadRequestException('breakDurationMinutes must be a non-negative number');
+    }
+    if (data.lunchDurationMinutes !== undefined && (typeof data.lunchDurationMinutes !== 'number' || data.lunchDurationMinutes < 0)) {
+      throw new BadRequestException('lunchDurationMinutes must be a non-negative number');
+    }
+    if (data.overtimeThresholdMinutes !== undefined && (typeof data.overtimeThresholdMinutes !== 'number' || data.overtimeThresholdMinutes <= 0)) {
+      throw new BadRequestException('overtimeThresholdMinutes must be a positive number');
+    }
+    if (data.maxOvertimeMinutes !== undefined && (typeof data.maxOvertimeMinutes !== 'number' || data.maxOvertimeMinutes < 0)) {
+      throw new BadRequestException('maxOvertimeMinutes must be a non-negative number');
+    }
+
     const before = await this.getWorkPolicy(companyId);
     const policy = await this.prisma.workPolicy.upsert({
       where: { companyId },

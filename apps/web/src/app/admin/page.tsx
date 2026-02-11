@@ -91,14 +91,23 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       const [summaryRes, activityRes] = await Promise.all([
         api.get<AdminSummary>('/admin/dashboard/summary'),
-        api.get<{ data: RecentActivity[] }>('/admin/dashboard/recent-activity?limit=10'),
+        api.get<any>('/admin/audit-logs?limit=10'),
       ]);
 
       if (summaryRes.success && summaryRes.data) {
         setSummary(summaryRes.data);
       }
       if (activityRes.success && activityRes.data) {
-        setRecentActivity(Array.isArray(activityRes.data) ? activityRes.data : []);
+        // audit-logs returns an array of audit log entries; map to RecentActivity format
+        const logs = Array.isArray(activityRes.data) ? activityRes.data : (activityRes.data?.items || activityRes.data?.logs || []);
+        const mapped: RecentActivity[] = logs.map((log: any) => ({
+          id: log.id,
+          type: log.action || log.type || 'system',
+          message: log.description || log.message || `${log.action || 'Action'} by ${log.userName || log.userEmail || 'system'}`,
+          timestamp: log.createdAt || log.timestamp,
+          severity: log.severity || 'info',
+        }));
+        setRecentActivity(mapped);
       }
     } catch (error) {
       console.error('Failed to fetch admin dashboard data:', error);

@@ -131,6 +131,15 @@ export class ChatService {
   }
 
   async getMessages(threadId: string, userId: string, options: { cursor?: string; limit?: number }) {
+    // CHAT-1 fix: Verify user is a member of the thread before returning messages
+    const member = await this.prisma.chatMember.findUnique({
+      where: { threadId_userId: { threadId, userId } },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this thread');
+    }
+
     const take = Number(options.limit) || 50;
     const { cursor } = options;
 
